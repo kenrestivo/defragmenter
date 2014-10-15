@@ -1,7 +1,95 @@
 (ns defragment.core-test
   (:require [clojure.test :refer :all]
+            [utilza.repl :as urepl]
             [defragment.core :refer :all]))
 
 (deftest a-test
   (testing "FIXME, I fail."
     (is (= 0 1))))
+
+(comment
+
+  (->> "resources/example-config.edn"
+       process-config
+       :in-oggs-path
+       get-oggs
+       (map parse)
+       (urepl/massive-spew "/tmp/foo.edn"))
+
+  ;;; raw shows
+  (->> "resources/example-config.edn"
+       process-config
+       :in-oggs-path
+       get-oggs
+       (map parse)
+       (sort-and-partition :show )
+       (urepl/massive-spew "/tmp/foo.edn"))
+
+  (->> "resources/example-config.edn"
+       process-config
+       :in-oggs-path
+       get-oggs
+       (map parse)
+       prepare-shows
+       (urepl/massive-spew "/tmp/foo.edn"))
+  
+  ;; everything
+  (->> "resources/example-config.edn"
+       process-config
+       :in-oggs-path
+       get-oggs
+       (map parse)
+       prepare-all
+       (urepl/massive-spew "/tmp/foo.edn"))
+  
+  
+  ;; only those with shows
+  (->> "resources/example-config.edn"
+       process-config
+       :in-oggs-path
+       get-oggs
+       (map parse)
+       prepare-shows
+       (urepl/massive-spew "/tmp/foo.edn"))
+
+
+
+  (->> "resources/example-config.edn"
+       process-config
+       :in-oggs-path
+       get-oggs
+       (map parse)
+       prepare-all
+       (gen-filenames "/mnt/sdcard/tmp/")
+       (spit "/mnt/sdcard/tmp/get-me"))
+  
+  ;; only those without shows
+  (->> "resources/example-config.edn"
+       process-config
+       :in-oggs-path
+       get-oggs
+       (map parse)
+       without-shows
+       (urepl/massive-spew "/tmp/foo.edn")) 
+
+  )
+
+
+(comment
+  
+  (->> "resources/example-config.edn"
+       process-config
+       :in-oggs-path
+       get-oggs
+       (map parse)
+       (concat-shows! "/mnt/sdcard/tmp"))
+
+  )
+
+(comment
+  (<  20141011231803 20141011225718)
+  (< 20141011225757  20141011225809)
+
+  )
+
+

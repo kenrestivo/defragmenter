@@ -1,0 +1,3 @@
+{:in-oggs-path "/mnt/sdcard/to-other/borkenoggs"
+ :out-oggs-path "/mnt/sdcard/tmp/"
+ :out-commands-file "/mnt/sdcard/tmp/get-me"}

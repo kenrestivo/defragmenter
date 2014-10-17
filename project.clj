@@ -9,6 +9,7 @@
                  [me.raynes/conch "0.8.0"]
                  [utilza "0.1.60"]
                  [com.taoensso/timbre "3.3.1"]
+                 [org.clojure/tools.trace "0.7.6"]
                  [useful "0.8.4"]]
   :main  defragment.core
   :bin {:name "defragment"}

@@ -3,12 +3,32 @@
   (:import java.io.SequenceInputStream)
   (:require [me.raynes.conch :refer [programs with-programs let-programs] :as sh]
             [utilza.repl :as urepl]
+            [clojure.tools.trace :as trace]
             [useful.map :as um]
             [utilza.java :as ujava]
             [clojure.edn :as edn]
             [utilza.misc :as umisc]
             [taoensso.timbre :as log]
             [clojure.string :as st]))
+
+
+
+;; IMPORTANT: This bare exec is here to dothis FIRST before running anything, at compile time
+(log/merge-config! {:appenders {:spit {:enabled? true
+                                       :fmt-output-opts {:nofonts? true}}
+                                :standard-out {:enabled? true
+                                               ;; nrepl/cider/emacs hates the bash escapes.
+                                               :fmt-output-opts {:nofonts? true}}}
+                    ;; TODO: should only be in dev profile/mode
+                    :shared-appender-config {:spit-filename "defragment.log"}})
+
+
+;; IMPORTANT: enables the very very awesome use of clojure.tools.trace/trace-vars , etc
+;; and logs the output of those traces to whatever is configured for timbre at the moment!
+(alter-var-root #'clojure.tools.trace/tracer (fn [_]
+                                               (fn [name value]
+                                                 (log/debug name value))))
+
 
 
 (programs vorbiscomment ogginfo oggz-info)

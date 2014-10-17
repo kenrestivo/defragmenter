@@ -9,7 +9,7 @@
 
 (comment
 
-  (->> "resources/example-config.edn"
+  (->> "resources/test-config.edn"
        process-config
        :in-oggs-path
        get-oggs
@@ -17,7 +17,7 @@
        (urepl/massive-spew "/tmp/foo.edn"))
 
   ;;; raw shows
-  (->> "resources/example-config.edn"
+  (->> "resources/test-config.edn"
        process-config
        :in-oggs-path
        get-oggs
@@ -25,7 +25,7 @@
        (sort-and-partition :show )
        (urepl/massive-spew "/tmp/foo.edn"))
 
-  (->> "resources/example-config.edn"
+  (->> "resources/test-config.edn"
        process-config
        :in-oggs-path
        get-oggs
@@ -34,7 +34,7 @@
        (urepl/massive-spew "/tmp/foo.edn"))
   
   ;; everything
-  (->> "resources/example-config.edn"
+  (->> "resources/test-config.edn"
        process-config
        :in-oggs-path
        get-oggs
@@ -43,28 +43,13 @@
        (urepl/massive-spew "/tmp/foo.edn"))
   
   
-  ;; only those with shows
-  (->> "resources/example-config.edn"
+
+  (->> "resources/test-config.edn"
        process-config
-       :in-oggs-path
-       get-oggs
-       (map parse)
-       prepare-shows
-       (urepl/massive-spew "/tmp/foo.edn"))
+       run-all)
 
-
-
-  (->> "resources/example-config.edn"
-       process-config
-       :in-oggs-path
-       get-oggs
-       (map parse)
-       prepare-all
-       (gen-filenames "/mnt/sdcard/tmp/")
-       (spit "/mnt/sdcard/tmp/get-me"))
-  
   ;; only those without shows
-  (->> "resources/example-config.edn"
+  (->> "resources/test-config.edn"
        process-config
        :in-oggs-path
        get-oggs
@@ -77,7 +62,7 @@
 
 (comment
   
-  (->> "resources/example-config.edn"
+  (->> "resources/test-config.edn"
        process-config
        :in-oggs-path
        get-oggs

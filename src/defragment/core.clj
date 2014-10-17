@@ -159,11 +159,12 @@
 
 
 (defn gen-filenames
-  [path files]
+  [cmd-path path files]
   (umisc/inter-str "\n"
                    (for [{:keys [name date filenames]}  files]
-                     (let [cmd (format "cat %s | thrashcat > %s"
+                     (let [cmd (format "cat %s | %s > %s"
                                        (umisc/inter-str " " filenames)
+                                       cmd-path
                                        (format-show-save path name date))]
                        (format "echo \"%s\"\n%s\n" cmd cmd)))))
       
@@ -186,13 +187,13 @@
 
 
 (defn run-all
-  [{:keys [in-oggs-path out-oggs-path out-commands-file]}]
-  [{:pre [(assert (every? (comp not empty?) [in-oggs-path out-commands-file out-oggs-path]))]}]
+  [{:keys [in-oggs-path cmd-path out-oggs-path out-commands-file]}]
+  [{:pre [(assert (every? (comp not empty?) [in-oggs-path cmd-path out-commands-file out-oggs-path]))]}]
   (->> in-oggs-path
        get-oggs
        (map parse)
        prepare-all
-       (gen-filenames out-oggs-path)
+       (gen-filenames cmd-path out-oggs-path)
        (spit out-commands-file)))
 
 
@@ -222,7 +223,7 @@
 
 (comment
 
-  (-main "resources/example-config.edn")
+  (-main "resources/test-config.edn")
 
   
   )

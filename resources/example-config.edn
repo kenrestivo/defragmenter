@@ -1,3 +1,4 @@
-{:in-oggs-path "/mnt/sdcard/to-other/borkenoggs"
- :out-oggs-path "/mnt/sdcard/tmp/"
- :out-commands-file "/mnt/sdcard/tmp/get-me"}
+{:in-oggs-path "/some/temp/borkenoggs"
+ :out-oggs-path "/some/temp/tmp/"
+ :cmd-path "/usr/local/bin/thrashcat"
+ :out-commands-file "/some/temp/get-me"}

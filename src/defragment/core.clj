@@ -1,7 +1,8 @@
 (ns defragment.core
   (:gen-class)
   (:import java.io.SequenceInputStream)
-  (:require [me.raynes.conch :refer [programs with-programs let-programs] :as sh]
+  (:require [me.raynes.conch :refer [programs with-programs let-programs] :as csh]
+            [me.raynes.conch.low-level :as sh]
             [utilza.repl :as urepl]
             [clojure.tools.trace :as trace]
             [useful.map :as um]
@@ -31,7 +32,7 @@
 
 
 
-(programs vorbiscomment ogginfo oggz-info)
+(programs bash)
 
 
 (defn get-oggs
@@ -157,17 +158,21 @@
   (format "%s/%s-%s.ogg"  path date name))
 
 
+(defn gen-command-line
+  "Takes a file glob, returns the string command to process it"
+  [cmd-path path {:keys [name date filenames]}]
+  (let [cmd (format "cat %s | %s > %s"
+                    (umisc/inter-str " " filenames)
+                    cmd-path
+                    (format-show-save path name date))]
+    (format "echo \"%s\"\n%s\n" cmd cmd)))
+
 
 (defn gen-filenames
   [cmd-path path files]
-  (umisc/inter-str "\n"
-                   (for [{:keys [name date filenames]}  files]
-                     (let [cmd (format "cat %s | %s > %s"
-                                       (umisc/inter-str " " filenames)
-                                       cmd-path
-                                       (format-show-save path name date))]
-                       (format "echo \"%s\"\n%s\n" cmd cmd)))))
-      
+  (umisc/inter-str "\n" (map (partial gen-command-line cmd-path path)  files)))
+
+
 
 
 
@@ -179,6 +184,23 @@
     (glom-show show-files)))
 
 
+(defn execute!
+  [cmd-path path out-commands-file fileglob]
+  (spit out-commands-file (gen-command-line cmd-path path fileglob))
+  (let [{:keys [stdout stderr exit-code]} (bash out-commands-file {:verbose true})]
+    (log/debug {:doing stdout, :result stderr, :status @exit-code})
+    (when (not= 0 @exit-code)
+      ;; TODO: throw exception too?
+      (log/error {:doing stdout, :result stderr, :status @exit-code})))
+  ;; TODO: the post processing!
+  )
+
+
+(defn execute-all!
+  [cmd-path path out-commands-file files]
+  (doseq [f files]
+    (log/info f)
+    (execute! cmd-path path out-commands-file f)))
 
 
 (defn prepare-all
@@ -193,8 +215,8 @@
        get-oggs
        (map parse)
        prepare-all
-       (gen-filenames cmd-path out-oggs-path)
-       (spit out-commands-file)))
+       (execute-all! cmd-path out-oggs-path out-commands-file)))
+
 
 
 
@@ -224,7 +246,6 @@
 (comment
 
   (-main "resources/test-config.edn")
-
   
   )
 

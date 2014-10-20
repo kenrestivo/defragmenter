@@ -78,3 +78,65 @@
   )
 
 
+(comment
+
+    
+  (->> "/mnt/sdcard/tmp/2014-10-11-test_in_the_dark_illegal_chars.ogg"
+       jio/as-file
+       VorbisIO/readComments
+       .fields
+       header->vec)
+
+
+  
+
+
+  
+  
+  (urepl/hjall *1)
+
+
+  (->> "/mnt/sdcard/tmp/2014-10-02-.ogg"
+       jio/as-file
+       VorbisIO/readComments
+       .fields)
+
+  
+  (->> "/mnt/sdcard/tmp/2014-10-02-.ogg"
+       jio/as-file
+       VorbisIO/readComments
+       .fields
+       (filter bad-title))
+
+
+  
+  (->> "/mnt/sdcard/tmp/2014-10-02-.ogg"
+       jio/as-file
+       VorbisIO/readComments
+       .fields
+       (map #(.name %)))
+  
+  (def foo *1)
+
+  
+
+  (->> "/mnt/sdcard/tmp/2014-09-28-.ogg"
+       jio/as-file
+       VorbisIO/readComments
+       .fields
+       (filter bad-title))
+
+  
+  (fix-in-place "/mnt/sdcard/tmp/2014-10-02-.ogg" (title-fixer "2014-10-02"))
+
+  ;; for testing
+  (fix-in-place "/mnt/sdcard/tmp/2014-10-02-.ogg" 
+                (reify CommentUpdater
+                  (updateComments [this comments]
+                    (let [fields (.fields comments)]
+                      (.add fields (CommentField. "ALBUM" "this is a Test Artist in Album yeah."))
+                      true))))
+
+  (fix-in-place "/mnt/sdcard/tmp/2014-10-02-.ogg" (album-mover))
+
+  )

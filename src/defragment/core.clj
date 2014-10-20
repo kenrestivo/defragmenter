@@ -1,13 +1,15 @@
 (ns defragment.core
   (:gen-class)
-  (:import java.io.SequenceInputStream)
+  (:import [adamb.vorbis VorbisCommentHeader VorbisIO CommentField CommentUpdater])
   (:require [me.raynes.conch :refer [programs with-programs let-programs] :as csh]
             [me.raynes.conch.low-level :as sh]
             [utilza.repl :as urepl]
             [clojure.tools.trace :as trace]
+            [clojure.string :as s]
             [useful.map :as um]
             [utilza.java :as ujava]
             [clojure.edn :as edn]
+            [clojure.java.io :as jio]
             [utilza.misc :as umisc]
             [taoensso.timbre :as log]
             [clojure.string :as st]))
@@ -184,16 +186,93 @@
     (glom-show show-files)))
 
 
+;; TODO: protocol maybe?
+(defn header->vec
+  "Takes array of CommentFields and translates to a proper Clojure vector"
+  [hs]
+  (for [^CommentField h hs]
+    [(-> h .name s/lower-case keyword) (.value h)]))
+
+
+(defn album-mover
+  []
+  (reify CommentUpdater
+    (updateComments [this comments]
+      (boolean
+       (let [fields (.fields comments)
+             albums (doall (filter #(-> % .name (= "ALBUM")) fields))
+             artists (doall (filter #(-> % .name (= "ARTIST")) fields))]
+         (log/debug "moving albums" fields)
+         (when-let [new-artist (some-> albums first .value)]
+           (log/debug "found album, moving" new-artist)
+           (doseq [r (concat artists albums)]
+             (log/debug "album-fixer removing" r)
+             (.remove fields r))
+           (.add fields (CommentField. "ARTIST" new-artist))
+           ;; return true if updated, false if not
+           true))))))
+
+
+
+(defn bad-title
+  [f]
+  (let [n (.name f)
+        v (.value f)]
+    (and (= "TITLE" n)
+         (or (= "Unknown" (s/trim v))
+             (= "%Y-%m-%d" (s/trim v))
+             (empty? v)))))
+
+;; XXX this function ought to be taken out and shot
+(defn title-fixer
+  [^String date]
+  (reify CommentUpdater
+    (updateComments [this comments]
+      (boolean
+       (let [fields (.fields comments)
+             unknowns (doall (filter bad-title fields))]
+         (log/debug "fixing titles" fields)
+         (when (not (empty? unknowns))
+           (log/debug "got unknowns" unknowns)
+           (doseq [u unknowns]
+             (log/debug "title-fixer removing" u)
+             (.remove fields u))
+           (.add fields (CommentField. "TITLE" date))
+           ;; return true if updated, false if not
+           true))))))
+
+
+
+(defn fix-in-place
+  [fpath fixer]
+  (log/debug "fixing files" fpath)
+  (try
+    (-> fpath
+        jio/as-file
+        (VorbisIO/writeComments fixer))
+    (catch Exception e
+      (log/error e))))
+
+(defn fix-comments
+  [path {:keys [name date]}]
+  (let [out-path (format-show-save path name date)]
+    (log/debug "fixing comments" out-path)
+    (fix-in-place out-path (title-fixer date))
+    (fix-in-place out-path (album-mover))))
+
+
 (defn execute!
-  [cmd-path path out-commands-file fileglob]
+  [cmd-path path out-commands-file  fileglob]
   (spit out-commands-file (gen-command-line cmd-path path fileglob))
   (let [{:keys [stdout stderr exit-code]} (bash out-commands-file {:verbose true})]
     (log/debug {:doing stdout, :result stderr, :status @exit-code})
     (when (not= 0 @exit-code)
       ;; TODO: throw exception too?
-      (log/error {:doing stdout, :result stderr, :status @exit-code})))
-  ;; TODO: the post processing!
-  )
+      (log/error {:doing stdout, :result stderr, :status @exit-code}))
+    (fix-comments path fileglob)
+    ;; TODO: move the old files to backup locations
+    ))
+
 
 
 (defn execute-all!
@@ -246,6 +325,7 @@
 (comment
 
   (-main "resources/test-config.edn")
-  
+
+
   )
 

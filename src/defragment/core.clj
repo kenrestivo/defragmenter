@@ -5,7 +5,6 @@
             [me.raynes.conch.low-level :as sh]
             [utilza.repl :as urepl]
             [clojure.tools.trace :as trace]
-            [clojure.string :as s]
             [useful.map :as um]
             [utilza.java :as ujava]
             [clojure.edn :as edn]
@@ -49,7 +48,7 @@
 
 (defn unogg
   "Strip the .suffix from a string.
-   Can not handle . in the name!"
+   WARNING: Can not handle . in the name!"
   [s]
   (-> s
       (st/split  #"\.")
@@ -191,7 +190,7 @@
     "Takes array of CommentFields and translates to a proper Clojure vector"
     [hs]
     (for [^CommentField h hs]
-      [(-> h .name s/lower-case keyword) (.value h)]))
+      [(-> h .name st/lower-case keyword) (.value h)]))
 
 
 (defn album-mover
@@ -229,8 +228,8 @@
   (let [n (.name f)
         v (.value f)]
     (and (= "TITLE" n)
-         (or (= "Unknown" (s/trim v))
-             (= "%Y-%m-%d" (s/trim v))
+         (or (= "Unknown" (st/trim v))
+             (= "%Y-%m-%d" (st/trim v))
              (empty? v)))))
 
 

@@ -1,4 +1,5 @@
 {:in-oggs-path "/some/temp/borkenoggs"
  :out-oggs-path "/some/temp/tmp/"
  :cmd-path "/usr/local/bin/thrashcat"
+ :backup-dir "/home/backups"
  :out-commands-file "/some/temp/get-me"}

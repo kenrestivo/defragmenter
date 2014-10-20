@@ -34,7 +34,7 @@
 
 
 
-(programs bash)
+(programs bash mv)
 
 
 (defn get-oggs
@@ -253,16 +253,25 @@
     (catch Exception e
       (log/error e))))
 
+
 (defn fix-comments
   [path {:keys [name date]}]
   (let [out-path (format-show-save path name date)]
     (log/debug "fixing comments" out-path)
-    (fix-in-place out-path (title-fixer date))
-    (fix-in-place out-path (album-mover))))
+    (doseq [f [(title-fixer date) (album-mover)]]
+      (fix-in-place out-path f))))
 
+
+(defn move-originals!
+  [{:keys [filenames]} backup-dir]
+  (let [backup-dir (if (.endsWith backup-dir "/") backup-dir (str backup-dir "/"))]
+    (doseq [f filenames]
+      (log/debug "moving" f "to" backup-dir)
+      (mv f backup-dir))))
+  
 
 (defn execute!
-  [cmd-path path out-commands-file  fileglob]
+  [cmd-path path out-commands-file backup-dir fileglob]
   (spit out-commands-file (gen-command-line cmd-path path fileglob))
   (let [{:keys [stdout stderr exit-code]} (bash out-commands-file {:verbose true})]
     (log/debug {:doing stdout, :result stderr, :status @exit-code})
@@ -270,16 +279,16 @@
       ;; TODO: throw exception too?
       (log/error {:doing stdout, :result stderr, :status @exit-code}))
     (fix-comments path fileglob)
-    ;; TODO: move the old files to backup locations
+    (move-originals! fileglob backup-dir)
     ))
 
 
 
 (defn execute-all!
-  [cmd-path path out-commands-file files]
+  [cmd-path path out-commands-file backup-dir files]
   (doseq [f files]
     (log/info f)
-    (execute! cmd-path path out-commands-file f)))
+    (execute! cmd-path path out-commands-file backup-dir f)))
 
 
 (defn prepare-all
@@ -288,13 +297,15 @@
 
 
 (defn run-all
-  [{:keys [in-oggs-path cmd-path out-oggs-path out-commands-file]}]
-  [{:pre [(assert (every? (comp not empty?) [in-oggs-path cmd-path out-commands-file out-oggs-path]))]}]
+  [{:keys [in-oggs-path cmd-path out-oggs-path out-commands-file backup-dir]}]
+  [{:pre [(assert (every? (comp not empty?) [in-oggs-path cmd-path backup-dir
+                                             out-commands-file out-oggs-path]))]}]
+  ;; TODO: check valid things, like all the directories actually exist!
   (->> in-oggs-path
        get-oggs
        (map parse)
        prepare-all
-       (execute-all! cmd-path out-oggs-path out-commands-file)))
+       (execute-all! cmd-path out-oggs-path out-commands-file backup-dir)))
 
 
 

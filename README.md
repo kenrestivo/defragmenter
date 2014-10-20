@@ -1,20 +1,20 @@
 # defragment
 
-FIXME: description
+Tool for defragmenting ogg files saved as YY-MM-DD-show_name.ogg
 
 ## Installation
 
-Download from http://example.com/FIXME.
+	lein bin
+
+Create the installation file
 
 ## Usage
 
-FIXME: explanation
-
-    $ java -jar defragment-0.1.0-standalone.jar [args]
+  ./defragment config.edn
 
 ## Options
 
-FIXME: listing of options this app accepts.
+docuent the config file options
 
 ## Examples
 
@@ -30,7 +30,7 @@ FIXME: listing of options this app accepts.
 
 ## License
 
-Copyright © 2014 FIXME
+Copyright © 2014 ken restivo <ken@restivo.org>
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.

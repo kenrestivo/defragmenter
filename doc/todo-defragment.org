@@ -1,0 +1,10 @@
+TODO for defragment
+
+
+* TODO add a proper readme
+* TODO rationalize this "fileglob" "glom-files", "filemap"
+** either give it a real name, be consistent, or create a proper defrecord for it, maybe even type-check it!
+* TODO check for zero length files first, delete them or skip them
+* TODO move the log config in timbre to after the config file is loaded
+* TODO safely remove all old out-cmd-file's after concatenate! is done
+* TODO sanity check config at startup, i.e. ike the directories exist

@@ -228,6 +228,7 @@
   (let [n (.name f)
         v (.value f)]
     (and (= "TITLE" n)
+         ;; TODO: bikeshed with (some? [#(pred) #(pred) empty?] (st/trim v))
          (or (= "Unknown" (st/trim v))
              (= "%Y-%m-%d" (st/trim v))
              (empty? v)))))

@@ -102,7 +102,6 @@
         (assoc :full-path filepath))))
 
 
-(def date-key-fn (juxt :year :month :day :time))
 
 (defn sort-and-partition
   "Takes a key and a seq of filename maps.
@@ -115,9 +114,6 @@
        (partition-by k)
        ;; necessary?
        first))
-
-
-
 
 
 
@@ -156,12 +152,18 @@
 
 
 (defn format-show-save
+  "Takes file path, show name, and date.
+   Returns a string with the outgoing show filename and path, with ogg extension"
   [path name date]
   (format "%s/%s-%s.ogg"  path date name))
 
 
 (defn gen-command-line
-  "Takes a file glob, returns the string command to process it"
+  "Takes a concatenating file command full path (cmd-path),
+  the path to where the output file is to be saved,
+  and a file glob (name, date, filenames)
+  Returns the string shell command to concatenate all the filenames,
+  to the output dir, named properly with name and date."
   [cmd-path path {:keys [name date filenames]}]
   (let [cmd (format "cat %s | %s > %s"
                     (umisc/inter-str " " filenames)
@@ -170,15 +172,12 @@
     (format "echo \"%s\"\n%s\n" cmd cmd)))
 
 
-(defn gen-filenames
-  [cmd-path path files]
-  (umisc/inter-str "\n" (map (partial gen-command-line cmd-path path)  files)))
-
-
-
 
 
 (defn without-shows
+  "Takes a list of raw ogg files.
+   Filters only those without valid shows (in filename).
+   Returns a seq of file globs (name, date, filenames) for them"
   [files]
   (for [[show-name show-files] (->> files
                                     (remove :show)
@@ -187,14 +186,24 @@
 
 
 ;; TODO: protocol maybe?
-(defn header->vec
-  "Takes array of CommentFields and translates to a proper Clojure vector"
-  [hs]
-  (for [^CommentField h hs]
-    [(-> h .name s/lower-case keyword) (.value h)]))
+;; unused, but might be needed later
+#_(defn header->vec
+    "Takes array of CommentFields and translates to a proper Clojure vector"
+    [hs]
+    (for [^CommentField h hs]
+      [(-> h .name s/lower-case keyword) (.value h)]))
 
 
 (defn album-mover
+  "Returns a CommentUpdater for use with JVorbisComment,
+   for updating comments in place,
+   which moves any ALBUM tags to ARTIST, removing any
+   ARTIST tags which might have been there.
+   Necessary because liquidsoap is broken and won't save
+   anything but artist in filename, and we've cleaned the artist
+   to make it a legal unix filename, so the real show name with
+   unescaped characters is stashed in ALBUM instead, and must be
+   recovered here."
   []
   (reify CommentUpdater
     (updateComments [this comments]
@@ -214,7 +223,8 @@
 
 
 
-(defn bad-title
+(defn bad-title?
+  "Predicate for determining if a title needs to be replaced."
   [f]
   (let [n (.name f)
         v (.value f)]
@@ -223,14 +233,18 @@
              (= "%Y-%m-%d" (s/trim v))
              (empty? v)))))
 
-;; XXX this function ought to be taken out and shot
+
 (defn title-fixer
+  "Returns a CommentUpdater for use with JVorbisComment,
+   for updating comments in place,
+   which removes any bad TITLE tags and replaces
+   them with the show date"
   [^String date]
   (reify CommentUpdater
     (updateComments [this comments]
       (boolean
        (let [fields (.fields comments)
-             unknowns (doall (filter bad-title fields))]
+             unknowns (doall (filter bad-title? fields))]
          (log/debug "fixing titles" fields)
          (when (not (empty? unknowns))
            (log/debug "got unknowns" unknowns)
@@ -242,9 +256,10 @@
            true))))))
 
 
-
-(defn fix-in-place
-  [fpath fixer]
+(defn fix-in-place!
+  "Utility function to do in-place comment updating,
+   using the supplied CommentUpdater"
+  [fpath ^CommentUpdater fixer]
   (log/debug "fixing files" fpath)
   (try
     (-> fpath
@@ -254,49 +269,71 @@
       (log/error e))))
 
 
-(defn fix-comments
+(defn fix-comments!
+  "Takes a path to output files,
+   and a fileglob (name, date, filenames),
+   and executes album and title fixes for that output file.
+   The output file had better be there already."
   [path {:keys [name date]}]
   (let [out-path (format-show-save path name date)]
     (log/debug "fixing comments" out-path)
     (doseq [f [(title-fixer date) (album-mover)]]
-      (fix-in-place out-path f))))
+      (fix-in-place! out-path f))))
 
 
 (defn move-originals!
+  "Takes a fileglob (name, date filenames) and the directory for backup files.
+   Moves all the original filenames in the fileglob to the backup location."
   [{:keys [filenames]} backup-dir]
   (let [backup-dir (if (.endsWith backup-dir "/") backup-dir (str backup-dir "/"))]
     (doseq [f filenames]
       (log/debug "moving" f "to" backup-dir)
       (mv f backup-dir))))
-  
 
-(defn execute!
-  [cmd-path path out-commands-file backup-dir fileglob]
+
+(defn concatenate!
+  "Takes a cmd-path (usually thrashcat) to a command which takes many streams on stdin and returns a concatenated single ogg/vorbis stream on stdout,
+  a path to deposit the concatenated file, an out-commands-file to dump a temporary shell script,
+  and a fileglob (name, date, filenames) with the info about a series of files to be concatenated.
+  Executes the cmd-path, feeding the filenames into it. Dumps the output to a specially-named
+  file in path."
+  [cmd-path path out-commands-file fileglob]
   (spit out-commands-file (gen-command-line cmd-path path fileglob))
   (let [{:keys [stdout stderr exit-code]} (bash out-commands-file {:verbose true})]
     (log/debug {:doing stdout, :result stderr, :status @exit-code})
     (when (not= 0 @exit-code)
       ;; TODO: throw exception too?
       (log/error {:doing stdout, :result stderr, :status @exit-code}))
-    (fix-comments path fileglob)
-    (move-originals! fileglob backup-dir)
+    ;; TODO: rm the old out-commands-file
     ))
 
 
 
 (defn execute-all!
+  "Takes a cmd-path to the external concatenating command,
+  a path to dump concatenated files,
+  an out-commands-file for temp scripts,
+  a backup-dir for moving the original filenames to,
+ and a fileglob (name, date, filenames) with the files to be concatenated.
+  Concatenates the files, fixes comments, and moves the originals to the backup-dir.
+  This is the core of the program."
   [cmd-path path out-commands-file backup-dir files]
   (doseq [f files]
     (log/info f)
-    (execute! cmd-path path out-commands-file backup-dir f)))
+    (concatenate! cmd-path path out-commands-file f)
+    (fix-comments! path f)
+    (move-originals! f backup-dir)))
 
 
 (defn prepare-all
+  "Takes list of files, and returns fileglobs (name, date, filenames) for them.
+   Processes files both with and without valid shows in their names."
   [files]
   (concat (prepare-shows files) (without-shows files)))
 
 
 (defn run-all
+  "Takes a config map, and runs the program, concatenating the oggs."
   [{:keys [in-oggs-path cmd-path out-oggs-path out-commands-file backup-dir]}]
   [{:pre [(assert (every? (comp not empty?) [in-oggs-path cmd-path backup-dir
                                              out-commands-file out-oggs-path]))]}]
@@ -311,6 +348,7 @@
 
 
 (defn process-config
+  "Read and deserialize the config"
   [config-path]
   (->> config-path
        slurp
@@ -319,6 +357,7 @@
 
 
 (defn revision-info
+  "Utility for determing the program's revision."
   []
   (let [{:keys [version revision]} (ujava/get-project-properties "defragment" "defragment")]
     (format "Version: %s, Revision %s" version revision)))

@@ -2,6 +2,14 @@
 
 Tool for defragmenting ogg files saved as YY-MM-DD-show_name.ogg
 
+## Why??
+
+Liquidsoap/Airtime saving shows in ogg format timestamped with YY-MM-DD. If the DJ's connection goes out, the shows get chopped up into several files. These have to be chained together, using http://github.com/kenrestivo/thrashcat , see rationale there for why.
+
+The shows are saved with YY-MM-DD-show_name.ogg, so this processes those filenames, combines them based on date and show name, saves them to an output directory, and moves the original files to a backup dir.
+
+It's usually run from a cron job in the middle of the night.
+
 ## Installation
 
 	lein bin
@@ -14,7 +22,16 @@ Create the installation file
 
 ## Options
 
-docuent the config file options
+TODO: document the config file options
+
+```clojure
+
+{:in-oggs-path "/some/temp/borkenoggs"
+ :out-oggs-path "/some/temp/tmp/"
+ :cmd-path "/usr/local/bin/thrashcat"
+ :backup-dir "/home/backups"
+ :out-commands-file "/some/temp/get-me"}
+```
 
 ## Examples
 
@@ -22,11 +39,9 @@ docuent the config file options
 
 ### Bugs
 
-...
+Actually, none at the moment, I'm sure some will crop up at some point.
 
-### Any Other Sections
-### That You Think
-### Might be Useful
+
 
 ## License
 

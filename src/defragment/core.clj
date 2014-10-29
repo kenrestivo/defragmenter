@@ -267,14 +267,27 @@
     (catch Exception e
       (log/error e))))
 
+(defn transfer-comments!
+  "Grab the comments from the first block in in-path, and tump them in out-path.
+   Hack required when using ogg123/oggenc instead of thrashcat."
+  [in-path out-path]
+  (try
+    (-> out-path
+        jio/file
+        (VorbisIO/writeComments (-> in-path jio/file VorbisIO/readComments)))
+    (catch Exception e
+      (log/error e in-path out-path))))
+
+
 
 (defn fix-comments!
   "Takes a path to output files,
    and a fileglob (name, date, filenames),
    and executes album and title fixes for that output file.
    The output file had better be there already."
-  [path {:keys [name date]}]
+  [path {:keys [name date filenames]}]
   (let [out-path (format-show-save path name date)]
+    (transfer-comments! (first filenames) out-path)
     (log/debug "fixing comments" out-path)
     (doseq [f [(title-fixer date) (album-mover)]]
       (fix-in-place! out-path f))))

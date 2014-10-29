@@ -164,9 +164,8 @@
   Returns the string shell command to concatenate all the filenames,
   to the output dir, named properly with name and date."
   [cmd-path path {:keys [name date filenames]}]
-  (let [cmd (format "cat %s | %s > %s"
+  (let [cmd (format "ogg123 -q -d wav -f - %s | oggenc -Q - > %s"
                     (umisc/inter-str " " filenames)
-                    cmd-path
                     (format-show-save path name date))]
     (format "echo \"%s\"\n%s\n" cmd cmd)))
 
@@ -298,14 +297,19 @@
   Executes the cmd-path, feeding the filenames into it. Dumps the output to a specially-named
   file in path."
   [cmd-path path out-commands-file fileglob]
-  (spit out-commands-file (gen-command-line cmd-path path fileglob))
-  (let [{:keys [stdout stderr exit-code]} (bash out-commands-file {:verbose true})]
-    (log/debug {:doing stdout, :result stderr, :status @exit-code})
-    (when (not= 0 @exit-code)
-      ;; TODO: throw exception too?
-      (log/error {:doing stdout, :result stderr, :status @exit-code}))
-    ;; TODO: rm the old out-commands-file
-    ))
+  (let [cmd-line (gen-command-line cmd-path path fileglob)]
+    (log/info cmd-line)
+    (spit out-commands-file cmd-line))
+  (try
+    (let [{:keys [stdout stderr exit-code]} (bash out-commands-file {:verbose true})]
+      (log/debug {:doing stdout, :result stderr, :status @exit-code})
+      (when (not= 0 @exit-code)
+        ;; TODO: throw exception too?
+        (log/error {:doing stdout, :result stderr, :status @exit-code}))
+      ;; TODO: rm the old out-commands-file
+      )
+    (catch Exception e
+      (log/error e cmd-path path out-commands-file fileglob))))
 
 
 

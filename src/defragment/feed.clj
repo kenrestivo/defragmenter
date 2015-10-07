@@ -3,6 +3,7 @@
             [clojure.data.xml :as xml]
             [utilza.misc :as umisc]
             [me.raynes.conch  :as sh]
+            [utilza.repl :as urepl]
             [clojure.edn :as edn]
             [clojure.string :as string]
             [clj-time.core :as time]
@@ -41,9 +42,9 @@
 (defn m:s->h:m:s
   [ms]
   (let [[_ m s] (re-matches #"(.*)m:(.*)" ms)
-          mm (Integer/parseInt m)
-          ss (Integer/parseInt s)]
-      (format "%02d:%02d:%02d" (int (/ mm 60)) (mod mm 60) ss)))
+        mm (Integer/parseInt m)
+        ss (Integer/parseInt s)]
+    (format "%02d:%02d:%02d" (int (/ mm 60)) (mod mm 60) ss)))
 
 (defn unogg
   "Strip the .suffix from a string.
@@ -59,17 +60,17 @@
   (log/debug "getting duration for" full-path)
   (binding [sh/*throw* false]
     (try
-    (->> full-path
-         ogginfo
-         string/split-lines
-         (filter #(.contains % "Playback length"))
-         first
-         (re-matches #"\tPlayback length:\s+(.+)\..*")
-         last
-         m:s->h:m:s)
-    (catch Exception e
-      (log/error e)
-      "04:00:00"))))
+      (->> full-path
+           ogginfo
+           string/split-lines
+           (filter #(.contains % "Playback length"))
+           first
+           (re-matches #"\tPlayback length:\s+(.+)\..*")
+           last
+           m:s->h:m:s)
+      (catch Exception e
+        (log/error e)
+        "04:00:00"))))
 
 
 (defn read-header
@@ -100,15 +101,31 @@
 
 
 (defn process-dir
-  [link dirpath]
-  (for [f (file/file-names dirpath  #".*?\.ogg")]
-    ;; TODO: if the file is already in the db, don't process it.
-    (process-file link dirpath f)))
+  [link  db-path dirpath]
+  (log/debug "processing dir" link db-path dirpath)
+  (let [db (try (-> db-path slurp edn/read-string)
+                (catch Exception e
+                  (log/error e)
+                  []))
+        new-db (for [f (file/file-names dirpath  #".*?\.ogg")]
+                 (if-let [found (->> db (filter #(= (:basename %) f)) first)]
+                   (do
+                     (log/trace "found" found)
+                     found)
+                   (process-file link dirpath f)))]
+    ;;(log/trace "old db" db)
+    ;;(log/trace "new db" new-db)
+    (.write *out* "flushing")
+    (.flush *out*)
+    (urepl/massive-spew db-path new-db)
+    new-db))
+
+
 
 (defn get-files
-  [link dirname]
-  (->>   dirname
-         (process-dir link)
+  [link db-path dirname]
+  (log/info "getting files" link dirname db-path)
+  (->>   (process-dir link db-path dirname)
          (sort-by :title)
          reverse))
 
@@ -202,11 +219,11 @@
              formatted-items)))))
 
 (defn make-feed!
-  [{:keys [out-oggs-path rss-base-url rss-self-url rss-out-file]}]
-  {:pre [(every? (comp not nil?) [out-oggs-path rss-base-url rss-self-url rss-out-file])]}
+  [{:keys [out-oggs-path rss-base-url db-path rss-self-url rss-out-file]}]
+  {:pre [(every? (comp not nil?) [out-oggs-path db-path rss-base-url rss-self-url rss-out-file])]}
   (log/info "making feed" out-oggs-path rss-base-url rss-self-url " --> " rss-out-file)
   (->> out-oggs-path
-       (get-files rss-base-url)
+       (get-files rss-base-url db-path)
        (xml-feedify rss-self-url)
        (spit rss-out-file)))
 
@@ -219,7 +236,10 @@
 
   (log/set-level! :trace)
 
-  (require '[utilza.repl :as urepl])
+  (log/set-level! :info)
+  
+  (log/info "testing")
+  
   
   (urepl/massive-spew "/tmp/foo.edn" *1)
 
@@ -229,11 +249,17 @@
       make-feed!)
   
 
-  (let [{:keys [out-oggs-path rss-base-url]}  (-> "resources/test-config.edn"
-                                                  slurp
-                                                  edn/read-string)]
-    (->> (get-files rss-base-url out-oggs-path)
+  (let [{:keys [db-path out-oggs-path rss-base-url]}  (-> "resources/test-config.edn"
+                                                          slurp
+                                                          edn/read-string)]
+    (->> (get-files rss-base-url db-path out-oggs-path )
          (urepl/massive-spew "/tmp/foo.edn")))
 
+  (let [{:keys [db-path out-oggs-path rss-base-url]}  (-> "resources/test-config.edn"
+                                                          slurp
+                                                          edn/read-string)]
+    (get-files rss-base-url db-path out-oggs-path ))
+  
 
-    )
+  
+  )

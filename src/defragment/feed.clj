@@ -103,6 +103,7 @@
                  (xml/element :content:encoded {}
                               )
                  (xml/element :enclosure:url {:type "audio/ogg"}
+                              ;; TODO: add length= in bytes
                               link)
                  (xml/element :itunes:duration {}
                               ;; TODO: XXX no, this must be th real duration. pull it out

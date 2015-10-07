@@ -2,7 +2,9 @@
   (:require [taoensso.timbre :as log]
             [clojure.data.xml :as xml]
             [utilza.misc :as umisc]
+            [me.raynes.conch  :as sh]
             [clojure.edn :as edn]
+            [clojure.string :as string]
             [clj-time.core :as time]
             [defragment.utils :as utils]
             [clojure.string :as st]
@@ -17,6 +19,7 @@
   (:import [adamb.vorbis VorbisCommentHeader VorbisIO CommentField CommentUpdater]
            [org.joda.DateTime]))
 
+(sh/programs oggz-info)
 
 (defn my-zone
   "show a time in a readable format, in my damn time zone
@@ -43,6 +46,17 @@
       (st/split  #"\.ogg")
       first))
 
+
+(defn get-duration
+  [full-path]
+  (->> full-path
+       oggz-info
+       string/split-lines
+       (filter #(.contains % "Content-Duration"))
+       first
+       (re-matches #"^.*?\s+(.+)\..*")
+       last))
+
 (defn read-header
   [f]
   (try
@@ -63,6 +77,7 @@
             :show (if (-> show empty?) "" (unogg show))
             :basename f
             :length (-> full-file jio/file .length)
+            :duration (get-duration full-file)
             :link (str link f)
             :full-file full-file}
            (read-header full-file))))
@@ -94,7 +109,7 @@
 (defn format-item
   "logentry comes in from the view as :key date, :id guid, :value message.
    Change these to XML item elements for RSS feed."
-  [{:keys [file show date link date title artist length]}]
+  [{:keys [file show date link date duration title artist length]}]
   (let [full-title (umisc/inter-str " - " [artist title])]
     (xml/element :item {}
                  (xml/element :title {}
@@ -107,8 +122,7 @@
                                               :length length}
                               link)
                  (xml/element :itunes:duration {}
-                              ;; TODO: XXX no, this must be th real duration. pull it out
-                              "04:00:00" )
+                              duration )
                  (xml/element :itunes:subtitle {}
                               )
                  (xml/element :itunes:summary {}
@@ -206,4 +220,5 @@
          (urepl/massive-spew "/tmp/foo.edn")))
 
 
+  
   )

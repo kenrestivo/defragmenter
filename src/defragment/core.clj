@@ -18,6 +18,8 @@
 
 
 
+
+
 ;; IMPORTANT: This bare exec is here to dothis FIRST before running anything, at compile time
 (log/merge-config! {:output-fn (partial log/default-output-fn {:stacktrace-fonts {}})
                     :appenders {:println (appenders/println-appender {:enabled? false})

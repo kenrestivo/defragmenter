@@ -57,7 +57,8 @@
 (defn get-duration
   [full-path]
   (log/debug "getting duration for" full-path)
-  (try
+  (binding [sh/*throw* false]
+    (try
     (->> full-path
          ogginfo
          string/split-lines
@@ -68,7 +69,8 @@
          m:s->h:m:s)
     (catch Exception e
       (log/error e)
-      "04:00:00")))
+      "04:00:00"))))
+
 
 (defn read-header
   [f]
@@ -100,6 +102,7 @@
 (defn process-dir
   [link dirpath]
   (for [f (file/file-names dirpath  #".*?\.ogg")]
+    ;; TODO: if the file is already in the db, don't process it.
     (process-file link dirpath f)))
 
 (defn get-files
@@ -233,5 +236,4 @@
          (urepl/massive-spew "/tmp/foo.edn")))
 
 
-    
     )

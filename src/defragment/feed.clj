@@ -49,13 +49,18 @@
 
 (defn get-duration
   [full-path]
-  (->> full-path
-       oggz-info
-       string/split-lines
-       (filter #(.contains % "Content-Duration"))
-       first
-       (re-matches #"^.*?\s+(.+)\..*")
-       last))
+  (log/debug "getting duration for" full-path)
+  (try
+    (->> full-path
+         oggz-info
+         string/split-lines
+         (filter #(.contains % "Content-Duration"))
+         first
+         (re-matches #"^.*?\s+(.+)\..*")
+         last)
+    (catch Exception e
+      (log/error e)
+      "04:00:00")))
 
 (defn read-header
   [f]

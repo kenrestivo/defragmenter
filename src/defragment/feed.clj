@@ -19,7 +19,7 @@
   (:import [adamb.vorbis VorbisCommentHeader VorbisIO CommentField CommentUpdater]
            [org.joda.DateTime]))
 
-(sh/programs oggz-info)
+(sh/programs ogginfo)
 
 (defn my-zone
   "show a time in a readable format, in my damn time zone
@@ -38,6 +38,13 @@
        my-zone))
 
 
+(defn m:s->h:m:s
+  [ms]
+  (let [[_ m s] (re-matches #"(.*)m:(.*)" ms)
+          mm (Integer/parseInt m)
+          ss (Integer/parseInt s)]
+      (format "%02d:%02d:%02d" (int (/ mm 60)) (mod mm 60) ss)))
+
 (defn unogg
   "Strip the .suffix from a string.
    WARNING: Can not handle . in the name!"
@@ -52,12 +59,13 @@
   (log/debug "getting duration for" full-path)
   (try
     (->> full-path
-         oggz-info
+         ogginfo
          string/split-lines
-         (filter #(.contains % "Content-Duration"))
+         (filter #(.contains % "Playback length"))
          first
-         (re-matches #"^.*?\s+(.+)\..*")
-         last)
+         (re-matches #"\tPlayback length:\s+(.+)\..*")
+         last
+         m:s->h:m:s)
     (catch Exception e
       (log/error e)
       "04:00:00")))
@@ -225,5 +233,5 @@
          (urepl/massive-spew "/tmp/foo.edn")))
 
 
-  
-  )
+    
+    )

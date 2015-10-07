@@ -10,3 +10,4 @@ pom.xml.asc
 /.nrepl-port
 test-config.edn
 *.log
+*.log4j

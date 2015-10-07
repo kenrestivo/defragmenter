@@ -3,12 +3,15 @@
   (:import [adamb.vorbis VorbisCommentHeader VorbisIO CommentField CommentUpdater])
   (:require [me.raynes.conch :refer [programs with-programs let-programs] :as csh]
             [me.raynes.conch.low-level :as sh]
+            [taoensso.timbre.appenders.core :as appenders]
             [utilza.repl :as urepl]
             [clojure.tools.trace :as trace]
             [useful.map :as um]
+            [defragment.feed :as feed]
             [utilza.java :as ujava]
             [clojure.edn :as edn]
             [clojure.java.io :as jio]
+            [utilza.file :as file]
             [utilza.misc :as umisc]
             [taoensso.timbre :as log]
             [clojure.string :as st]))
@@ -16,13 +19,10 @@
 
 
 ;; IMPORTANT: This bare exec is here to dothis FIRST before running anything, at compile time
-(log/merge-config! {:appenders {:spit {:enabled? true
-                                       :fmt-output-opts {:nofonts? true}}
-                                :standard-out {:enabled? true
-                                               ;; nrepl/cider/emacs hates the bash escapes.
-                                               :fmt-output-opts {:nofonts? true}}}
-                    ;; TODO: should only be in dev profile/mode
-                    :shared-appender-config {:spit-filename "defragment.log"}})
+(log/merge-config! {:output-fn (partial log/default-output-fn {:stacktrace-fonts {}})
+                    :appenders {:println (appenders/println-appender {:enabled? false})
+                                :spit (appenders/spit-appender
+                                       {:fname "defragment.log4j"})}})
 
 
 ;; IMPORTANT: enables the very very awesome use of clojure.tools.trace/trace-vars , etc
@@ -40,11 +40,7 @@
   "Takes directory path.
    Reuurns a seq of strings of the ogg files in that dir"
   [dirpath]
-  (->> dirpath
-       java.io.File.
-       .listFiles
-       (map #(.toString  %) )
-       (filter #(.endsWith % ".ogg"))))
+  (file/file-names dirpath #".*?\.ogg"))
 
 (defn unogg
   "Strip the .suffix from a string.
@@ -55,13 +51,6 @@
       first))
 
 
-(defn path-sep
-  "Basically, basename: Separate a filepath,
-   return a vector of [path, basename]"
-  [s]
-  (let [all (.split s "/")]
-    [(->> all butlast (interpose "/") (apply str))
-     (->  all last)]))
 
 (defn formatted-date
   "Takes a filepath map.
@@ -93,12 +82,11 @@
    Removes the ogg suffix because that gets in our way later.
    Returns a map with the tokenized processed structure of each filename
    and the filename itself as :full-path"
-  [filepath]
-  (let [[path fname] (path-sep filepath)]
-    (-> fname
-        unogg
-        tokenize
-        (assoc :full-path filepath))))
+  [filepath filename]
+  (-> filename
+      unogg
+      tokenize
+      (assoc :full-path (str filepath "/" filename))))
 
 
 
@@ -183,13 +171,6 @@
     (glom-show show-files)))
 
 
-;; TODO: protocol maybe?
-;; unused, but might be needed later
-#_(defn header->vec
-    "Takes array of CommentFields and translates to a proper Clojure vector"
-    [hs]
-    (for [^CommentField h hs]
-      [(-> h .name st/lower-case keyword) (.value h)]))
 
 
 (defn album-mover
@@ -334,11 +315,13 @@
  and a fileglob (name, date, filenames) with the files to be concatenated.
   Concatenates the files, fixes comments, and moves the originals to the backup-dir.
   This is the core of the program."
-  [cmd-path path out-commands-file backup-dir files]
+  [{:keys [cmd-path out-oggs-path out-commands-file backup-dir]} files]
+  [{:pre [(assert (every? (comp not empty?) [cmd-path backup-dir
+                                             out-commands-file out-oggs-path]))]}]
   (doseq [f files]
     (log/info f)
-    (concatenate! cmd-path path out-commands-file f)
-    (fix-comments! path f)
+    (concatenate! cmd-path out-oggs-path out-commands-file f)
+    (fix-comments! out-oggs-path f)
     (move-originals! f backup-dir)))
 
 
@@ -349,17 +332,19 @@
   (concat (prepare-shows files) (without-shows files)))
 
 
-(defn run-all
+(defn run-all!
   "Takes a config map, and runs the program, concatenating the oggs."
-  [{:keys [in-oggs-path cmd-path out-oggs-path out-commands-file backup-dir]}]
-  [{:pre [(assert (every? (comp not empty?) [in-oggs-path cmd-path backup-dir
-                                             out-commands-file out-oggs-path]))]}]
+  [{:keys [in-oggs-path cmd-path out-oggs-path out-commands-file backup-dir] :as conf}]
+  [{:pre [(every? (comp not empty?) [in-oggs-path cmd-path backup-dir
+                                     out-commands-file out-oggs-path])]}]
   ;; TODO: check valid things, like all the directories actually exist!
   (->> in-oggs-path
        get-oggs
-       (map parse)
+       (map (partial parse in-oggs-path))
        prepare-all
-       (execute-all! cmd-path out-oggs-path out-commands-file backup-dir)))
+       (execute-all! conf))
+  ;; TODO: out-oggs-path generate the feed!
+  )
 
 
 
@@ -383,15 +368,25 @@
 (defn -main [config-path & args]
   (log/info "Welcome to Defragment " (revision-info))
   (log/info "Loading config file " config-path)
-  (-> config-path
-      process-config
-      run-all))
+  (let [conf (process-config config-path)]
+    (run-all! conf)
+    (log/info "concatenation done")
+    (feed/make-feed! conf)
+    (log/info "feed done")))
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (comment
 
   (-main "resources/test-config.edn")
+
+  (clojure.tools.trace/trace-vars parse)
+
+  (log/info "test")
+  
+  (log/set-level! :trace)
+
 
 
   )

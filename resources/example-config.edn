@@ -1,5 +1,8 @@
 {:in-oggs-path "/some/temp/borkenoggs"
  :out-oggs-path "/some/temp/tmp/"
- :cmd-path "/usr/local/bin/thrashcat"
+ :cmd-path "/bin/cat"
  :backup-dir "/home/backups"
- :out-commands-file "/some/temp/get-me"}
+ :out-commands-file "/some/temp/get-me"
+ :rss-base-url "http://radio.spaz.org/archives/imports/"
+ :rss-self-url "http://radio.spaz.org/archives.xml"
+ :rss-out-file "/home/streams/archives.xml"}

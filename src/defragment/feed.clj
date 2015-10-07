@@ -62,6 +62,7 @@
     (merge {:date (ymd-to-date [y m d])
             :show (if (-> show empty?) "" (unogg show))
             :basename f
+            :length (-> full-file jio/file .length)
             :link (str link f)
             :full-file full-file}
            (read-header full-file))))
@@ -93,7 +94,7 @@
 (defn format-item
   "logentry comes in from the view as :key date, :id guid, :value message.
    Change these to XML item elements for RSS feed."
-  [{:keys [file show date link date title artist]}]
+  [{:keys [file show date link date title artist length]}]
   (let [full-title (umisc/inter-str " - " [artist title])]
     (xml/element :item {}
                  (xml/element :title {}
@@ -102,8 +103,8 @@
                               full-title)
                  (xml/element :content:encoded {}
                               )
-                 (xml/element :enclosure:url {:type "audio/ogg"}
-                              ;; TODO: add length= in bytes
+                 (xml/element :enclosure:url {:type "audio/ogg"
+                                              :length length}
                               link)
                  (xml/element :itunes:duration {}
                               ;; TODO: XXX no, this must be th real duration. pull it out
@@ -155,7 +156,7 @@
              (xml/element :copyright {}
                           "sharenjoy")
              (xml/element :webMaster {}
-                          "info@spaz.org")
+                          "info@spaz.org (S.P.A.Z. Infoline)")
              (xml/element :language {}
                           "en")
              (xml/element :generator {}

@@ -1,5 +1,5 @@
-{:in-oggs-path "/some/temp/borkenoggs"
- :out-oggs-path "/some/temp/tmp/"
+{:in-oggs-path "/home/streams"
+ :out-oggs-path "/home/imports"
  :cmd-path "/bin/cat"
  :backup-dir "/home/backups"
  :out-commands-file "/some/temp/get-me"

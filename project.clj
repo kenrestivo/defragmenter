@@ -7,7 +7,7 @@
 
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [me.raynes/conch "0.8.0"]
-                 [utilza "0.1.66"]
+                 [utilza "0.1.68"]
                  [org.clojure/data.xml "0.0.8"]
                  [cheshire "5.5.0"]
                  [com.taoensso/timbre "4.1.4"]

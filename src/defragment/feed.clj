@@ -3,6 +3,7 @@
             [clojure.data.xml :as xml]
             [utilza.misc :as umisc]
             [me.raynes.conch  :as sh]
+            [me.raynes.conch.low-level :as lsh]
             [utilza.repl :as urepl]
             [clojure.edn :as edn]
             [clojure.string :as string]
@@ -18,9 +19,9 @@
             [cheshire.core :as json]
             [clojure.java.io :as io])
   (:import [adamb.vorbis VorbisCommentHeader VorbisIO CommentField CommentUpdater]
+           [java.lang.Math]
            [org.joda.DateTime]))
 
-(sh/programs ogginfo)
 
 (defn my-zone
   "show a time in a readable format, in my damn time zone
@@ -39,12 +40,16 @@
        my-zone))
 
 
-(defn m:s->h:m:s
-  [ms]
-  (let [[_ m s] (re-matches #"(.*)m:(.*)" ms)
-        mm (Integer/parseInt m)
-        ss (Integer/parseInt s)]
-    (format "%02d:%02d:%02d" (int (/ mm 60)) (mod mm 60) ss)))
+(defn s->h:m:s
+  [s-str]
+  ;; should be a reduce!
+  (let [ss  (Float/parseFloat s-str)
+        h (int (Math/floor (/ ss 3600)))
+        r (mod ss 3600)
+        m (int (Math/floor (/ r 60)))
+        s (int (mod r 60))]
+    (format "%02d:%02d:%02d" h m s)))
+
 
 (defn unogg
   "Strip the .suffix from a string.
@@ -56,18 +61,16 @@
 
 
 (defn get-duration
-  [full-path]
+  [python-path duration-path full-path]
   (log/debug "getting duration for" full-path)
   (binding [sh/*throw* false]
     (try
-      (->> full-path
-           ogginfo
-           string/split-lines
-           (filter #(.contains % "Playback length"))
-           first
-           (re-matches #"\tPlayback length:\s+(.+)\..*")
-           last
-           m:s->h:m:s)
+      (-> (lsh/proc python-path duration-path full-path)
+          :out
+          jio/reader
+          line-seq
+          first
+          s->h:m:s)
       (catch Exception e
         (log/error e)
         "04:00:00"))))
@@ -85,7 +88,7 @@
 
 
 (defn process-file
-  [link dirpath f]
+  [link dirpath python-path duration-path f]
   (let [[y m d show & _ ] (st/split f #"-")
         full-file (str dirpath "/" f)]
     (log/trace "processing" full-file "->" show)
@@ -93,7 +96,7 @@
             :show (if (-> show empty?) "" (unogg show))
             :basename f
             :length (-> full-file jio/file .length)
-            :duration (get-duration full-file)
+            :duration (get-duration python-path duration-path full-file)
             :link (str link f)
             :full-file full-file}
            (read-header full-file))))
@@ -101,7 +104,7 @@
 
 
 (defn process-dir
-  [link  db-path dirpath]
+  [link  db-path python-path duration-path dirpath]
   (log/debug "processing dir" link db-path dirpath)
   (let [db (try (-> db-path slurp edn/read-string)
                 (catch Exception e
@@ -112,7 +115,7 @@
                    (do
                      (log/trace "found" found)
                      found)
-                   (process-file link dirpath f)))]
+                   (process-file link dirpath python-path duration-path f)))]
     ;;(log/trace "old db" db)
     ;;(log/trace "new db" new-db)
     (.write *out* "flushing")
@@ -123,9 +126,9 @@
 
 
 (defn get-files
-  [link db-path dirname]
+  [link db-path python-path duration-path dirname]
   (log/info "getting files" link dirname db-path)
-  (->>   (process-dir link db-path dirname)
+  (->>   (process-dir link db-path python-path duration-path dirname)
          (sort-by :title)
          reverse))
 
@@ -219,11 +222,11 @@
              formatted-items)))))
 
 (defn make-feed!
-  [{:keys [out-oggs-path rss-base-url db-path rss-self-url rss-out-file]}]
-  {:pre [(every? (comp not nil?) [out-oggs-path db-path rss-base-url rss-self-url rss-out-file])]}
+  [{:keys [out-oggs-path rss-base-url db-path rss-self-url rss-out-file python-path duration-path]}]
+  {:pre [(every? (comp not nil?) [out-oggs-path db-path rss-base-url rss-self-url rss-out-file python-path duration-path])]}
   (log/info "making feed" out-oggs-path rss-base-url rss-self-url " --> " rss-out-file)
   (->> out-oggs-path
-       (get-files rss-base-url db-path)
+       (get-files rss-base-url db-path python-path duration-path)
        (xml-feedify rss-self-url)
        (spit rss-out-file)))
 
@@ -261,5 +264,10 @@
     (get-files rss-base-url db-path out-oggs-path ))
   
 
+
+
+  ;; can't do this right now
+
+  
   
   )

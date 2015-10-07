@@ -1,0 +1,11 @@
+{:in-oggs-path "/mnt/sdcard/to-other/test-oggs"
+ :out-oggs-path "/mnt/sdcard/tmp/out"
+ :cmd-path "/bin/cat"
+ :backup-dir "/mnt/sdcard/to-other/backups"
+ :duration-path "/home/cust/spaz/src/defragment/resources/duration.py"
+ :python-path "/usr/bin/python"
+ :db-path "/mnt/sdcard/tmp/defragment-cache.edn"
+ :out-commands-file "/mnt/sdcard/tmp/get-me"
+ :rss-base-url "http://radio.spaz.org/archives/imports/"
+ :rss-self-url "http://radio.spaz.org/archives.xml"
+ :rss-out-file "/tmp/foo.xml"}

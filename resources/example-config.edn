@@ -1,7 +1,7 @@
 {:in-oggs-path "/home/streams"
  :out-oggs-path "/home/imports"
  :python-path "/usr/lib/airtime/airtime_virtualenv/bin/python"
- :duration-path "/home/src/duration.py"
+ :duration-path "/home/src/defragment/duration.py"
  :cmd-path "/bin/cat"
  :backup-dir "/home/backups"
  :db-path "/home/streams/defragment-cache.edn"

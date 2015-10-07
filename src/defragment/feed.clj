@@ -77,7 +77,7 @@
   [link dirname]
   (->>   dirname
          (process-dir link)
-         (sort-by :date)
+         (sort-by :title)
          reverse))
 
 ;; TODO: move to utlilza
@@ -93,7 +93,7 @@
 (defn format-item
   "logentry comes in from the view as :key date, :id guid, :value message.
    Change these to XML item elements for RSS feed."
-  [{:keys [file show date link fdate title artist]}]
+  [{:keys [file show date link date title artist]}]
   (let [full-title (umisc/inter-str " - " [artist title])]
     (xml/element :item {}
                  (xml/element :title {}
@@ -120,7 +120,7 @@
                  (xml/element :itunes:block {}
                               "no"             )
                  (xml/element :pubDate {}
-                              fdate)
+                              date)
                  (xml/element :link {}  link)
                  (xml/element :guid {:isPermaLink "false"}
                               link))))
@@ -129,7 +129,8 @@
 
 (defn xml-feedify
   [rss-file-self items]
-  (let [last-date (-> items first :date)]
+  (let [last-date (-> items first :date)
+        formatted-items (map format-item items)]
     (xml/emit-str
      (xml/element
       :rss
@@ -166,7 +167,7 @@
                           {:href rss-file-self
                            :rel "self"
                            :type "application/rss+xml"})
-             items)))))
+             formatted-items)))))
 
 (defn make-feed!
   [{:keys [out-oggs-path rss-base-url rss-self-url rss-out-file]}]
@@ -174,7 +175,6 @@
   (log/info "making feed" out-oggs-path rss-base-url rss-self-url " --> " rss-out-file)
   (->> out-oggs-path
        (get-files rss-base-url)
-       (map format-item)
        (xml-feedify rss-self-url)
        (spit rss-out-file)))
 
@@ -184,15 +184,24 @@
 
   ;; TODO: get the files, get list of shows in it, get all the feeds for those shows
   
-  (->> "/mnt/sdcard/tmp/out"
-       (make-feed nil)
-       (spit "/tmp/foo.xml"))
 
   (log/set-level! :trace)
 
   (require '[utilza.repl :as urepl])
   
   (urepl/massive-spew "/tmp/foo.edn" *1)
+
+  (-> "resources/test-config.edn"
+      slurp
+      edn/read-string
+      make-feed!)
+  
+
+  (let [{:keys [out-oggs-path rss-base-url]}  (-> "resources/test-config.edn"
+                                                  slurp
+                                                  edn/read-string)]
+    (->> (get-files rss-base-url out-oggs-path)
+         (urepl/massive-spew "/tmp/foo.edn")))
 
 
   )

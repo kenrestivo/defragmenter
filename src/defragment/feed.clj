@@ -161,7 +161,7 @@
                  (xml/element :description {}
                               (xml/cdata full-title))
                  (xml/element :content:encoded {}
-                              (xml/cdata (format "<p>%s</p><audio src='%s'>Your browser does not support the <code>audio</code> element.</audio>" (umisc/escape-html full-title) link)))
+                              (xml/cdata (format "<p>%s</p><audio controls src='%s'>Player</audio>" (umisc/escape-html full-title) link)))
                  (xml/element :wfw:commentRss {} "http://spaz.org/radio")
                  (xml/element :slash:comments {} 0)
                  (xml/element :enclosure  {:type "audio/ogg"

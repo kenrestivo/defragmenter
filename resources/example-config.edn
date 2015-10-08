@@ -7,5 +7,5 @@
  :db-path "/home/streams/defragment-cache.edn"
  :out-commands-file "/tmp/get-me"
  :rss-base-url "http://radio.spaz.org/archives/imports/"
- :rss-self-url "http://radio.spaz.org/archives.xml"
- :rss-out-file "/home/streams/archives.xml"}
+ :rss-self-url "http://radio.spaz.org/archives.rss"
+ :rss-out-file "/home/streams/archives.rss"}

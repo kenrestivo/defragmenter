@@ -7,5 +7,5 @@
  :db-path "/mnt/sdcard/tmp/defragment-cache.edn"
  :out-commands-file "/mnt/sdcard/tmp/get-me"
  :rss-base-url "http://radio.spaz.org/archives/imports/"
- :rss-self-url "http://radio.spaz.org/archives.xml"
+ :rss-self-url "http://radio.spaz.org/archives.rss"
  :rss-out-file "/tmp/foo.xml"}

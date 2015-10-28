@@ -23,13 +23,12 @@
 
 (defn post-all
   [settings items]
-  (future
-    (doseq [item items]
-      (when-not (-> item :title empty?)
+  (doseq [item items]
+    (when-not (-> item :title empty?)
       (try
         (post-to-hubzilla settings item)
         (catch Exception e
-          (log/error e)))))))
+          (log/error e))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

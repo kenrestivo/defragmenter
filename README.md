@@ -11,7 +11,10 @@ The shows are saved with YY-MM-DD-show_name.ogg, so this processes those filenam
 It's usually run from a cron job in the middle of the night.
 
 ## Requirements
-* vorbis-tools (ogg123, oggenc)
+* vorbis-tools (ogg123, oggenc) version 1.4.0-6ubuntu1 or later, with this patch:
+https://bugzilla.redhat.com/show_bug.cgi?id=1185558
+or this one:
+https://git.xiph.org/?p=vorbis-tools.git;a=commit;h=514116d7bea89dad9f1deb7617b2277b5e9115cd
 
 ## Installation
 

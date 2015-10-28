@@ -1,26 +1,27 @@
 (ns defragment.feed
-   (:require [taoensso.timbre :as log]
-             [clojure.data.xml :as xml]
-             [utilza.misc :as umisc]
-             [me.raynes.conch  :as sh]
-             [me.raynes.conch.low-level :as lsh]
-             [utilza.repl :as urepl]
-             [clojure.edn :as edn]
-             [clojure.string :as string]
-             [clj-time.core :as time]
-             [defragment.utils :as utils]
-             [clojure.string :as st]
-             [utilza.misc :as umisc]
-             [utilza.file :as file]
-             [clojure.java.io :as jio]
-             [clj-time.format :as time-fmt]
-             [clj-time.coerce :as ctime]
-             [clojure.string :as s]
-             [cheshire.core :as json]
-             [clojure.java.io :as io])
-   (:import [adamb.vorbis VorbisCommentHeader VorbisIO CommentField CommentUpdater]
-            [java.lang.Math]
-            [org.joda.DateTime]))
+  (:require [taoensso.timbre :as log]
+            [clojure.data.xml :as xml]
+            [defragment.hubzilla :as hubzilla]
+            [utilza.misc :as umisc]
+            [me.raynes.conch  :as sh]
+            [me.raynes.conch.low-level :as lsh]
+            [utilza.repl :as urepl]
+            [clojure.edn :as edn]
+            [clojure.string :as string]
+            [clj-time.core :as time]
+            [defragment.utils :as utils]
+            [clojure.string :as st]
+            [utilza.misc :as umisc]
+            [utilza.file :as file]
+            [clojure.java.io :as jio]
+            [clj-time.format :as time-fmt]
+            [clj-time.coerce :as ctime]
+            [clojure.string :as s]
+            [cheshire.core :as json]
+            [clojure.java.io :as io])
+  (:import [adamb.vorbis VorbisCommentHeader VorbisIO CommentField CommentUpdater]
+           [java.lang.Math]
+           [org.joda.DateTime]))
 
 
 (defn my-zone
@@ -247,8 +248,8 @@
              formatted-items)))))
 
 (defn make-feed!
-  [{:keys [out-oggs-path rss-base-url db-path rss-self-url rss-out-file python-path duration-path]}]
-  {:pre [(every? (comp not nil?) [out-oggs-path db-path rss-base-url rss-self-url rss-out-file python-path duration-path])]}
+  [{:keys [out-oggs-path rss-base-url db-path rss-self-url rss-out-file python-path duration-path hubzilla]}]
+  {:pre [(every? (comp not nil?) [out-oggs-path db-path rss-base-url rss-self-url rss-out-file python-path duration-path hubzilla])]}
   (log/info "making feed" out-oggs-path rss-base-url rss-self-url " --> " rss-out-file)
   (->> out-oggs-path
        (get-files rss-base-url db-path python-path duration-path)
@@ -294,6 +295,21 @@
       slurp
       edn/read-string
       make-feed!)
+  
+
+
+  (log/set-level! :trace)
+
+
+  (let [{:keys [out-oggs-path rss-base-url db-path rss-self-url rss-out-file
+                python-path duration-path hubzilla]}
+        (-> "/home/cust/spaz/src/fake-rss.edn"
+            slurp
+            edn/read-string)]
+    (->> out-oggs-path
+         (get-files rss-base-url db-path python-path duration-path)
+         (hubzilla/post-all hubzilla)))
+
   
   
   )

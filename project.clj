@@ -9,6 +9,7 @@
                  [me.raynes/conch "0.8.0"]
                  [utilza "0.1.68"]
                  [org.clojure/data.xml "0.0.8"]
+                 [clj-http "2.0.0"]
                  [cheshire "5.5.0"]
                  [com.taoensso/timbre "4.1.4"]
                  [clj-time "0.11.0"]

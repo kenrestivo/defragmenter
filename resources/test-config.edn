@@ -8,4 +8,8 @@
  :out-commands-file "/mnt/sdcard/tmp/get-me"
  :rss-base-url "http://radio.spaz.org/archives/imports/"
  :rss-self-url "http://radio.spaz.org/archives.rss"
- :rss-out-file "/tmp/foo.xml"}
+ :rss-out-file "/tmp/foo.xml"
+ :hubzilla {:url "somwehere"
+            :listen "something"
+            :login "some"
+            :pw "apass"}}

@@ -254,7 +254,10 @@
   (->> out-oggs-path
        (get-files rss-base-url db-path python-path duration-path)
        (xml-feedify rss-self-url)
-       (spit rss-out-file)))
+       (spit rss-out-file))
+  (->> out-oggs-path
+       (get-files rss-base-url db-path python-path duration-path)
+       (hubzilla/post-all hubzilla)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -306,9 +309,8 @@
         (-> "/home/cust/spaz/src/fake-rss.edn"
             slurp
             edn/read-string)]
-    (->> out-oggs-path
-         (get-files rss-base-url db-path python-path duration-path)
-         (hubzilla/post-all hubzilla)))
+    ;;do stufff
+    )
 
   
   

@@ -1,4 +1,4 @@
-(defproject defragment "0.1.6"
+(defproject defragment "0.1.7"
   :description "Ogg file defragmenter"
   :url "https://github.com/kenrestivo/defragment"
   :license {:name "Eclipse Public License"
@@ -20,5 +20,6 @@
   :bin {:name "defragment"}
   ;; needed for this wacky jorbiscomment thing
   :repositories [["kens" "http://restivo.org/mvn"]]
-  :profiles {:uberjar {:aot :all}
+  :profiles {:uberjar {:aot :all
+                       :uberjar-name "defragment.jar"}
              :dev {:dependencies [[org.timmc/handy "1.7.0" :exclusions [[org.clojure/clojure]]]]}})

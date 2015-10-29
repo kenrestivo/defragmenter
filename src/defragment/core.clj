@@ -375,7 +375,8 @@
     (run-all! conf)
     (log/info "concatenation done")
     (feed/make-feed! conf)
-    (log/info "feed done")))
+    (log/info "feed done"))
+  (System/exit 0))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -104,21 +104,23 @@
 
 
 
-(defn process-dir
-  [link  db-path python-path duration-path dirpath]
+(defn process-dir!
+  [link  db-path python-path duration-path hubzilla dirpath]
   (log/debug "processing dir" link db-path dirpath)
   (let [db (try (-> db-path slurp edn/read-string)
                 (catch Exception e
                   (log/error e)
                   []))
         new-db (for [f (file/file-names dirpath  #".*?\.ogg")]
-                 (if-let [found (->> db (filter #(= (:basename %) f)) first)]
-                   (do
-                     (log/trace "found" found)
-                     found)
-                   (process-file link dirpath python-path duration-path f)))]
-    ;;(log/trace "old db" db)
-    ;;(log/trace "new db" new-db)
+                 (do
+                   (log/trace "checking db for file" f)
+                   (if-let [found (->> db (filter #(= (:basename %) f)) first)]
+                     (do (log/trace "found" found) found)
+                     (let [munged (process-file link dirpath python-path duration-path f)]
+                       (assoc munged :post-future (future (try
+                                                            (hubzilla/post-to-hubzilla hubzilla munged)
+                                                            (catch Exception e
+                                                              (log/error e)))))))))]
     (.write *out* "flushing")
     (.flush *out*)
     (urepl/massive-spew db-path new-db)
@@ -127,9 +129,9 @@
 
 
 (defn get-files
-  [link db-path python-path duration-path dirname]
-  (log/info "getting files" link dirname db-path)
-  (->>   (process-dir link db-path python-path duration-path dirname)
+  [{:keys [link db-path python-path duration-path hubzilla out-oggs-path]}]
+  (log/info "getting files" link out-oggs-path db-path)
+  (->>   (process-dir! link db-path python-path duration-path  hubzilla out-oggs-path)
          (sort-by :title)
          reverse))
 
@@ -248,16 +250,21 @@
              formatted-items)))))
 
 (defn make-feed!
-  [{:keys [out-oggs-path rss-base-url db-path rss-self-url rss-out-file python-path duration-path hubzilla]}]
-  {:pre [(every? (comp not nil?) [out-oggs-path db-path rss-base-url rss-self-url rss-out-file python-path duration-path hubzilla])]}
+  [{:keys [out-oggs-path in-oggs-path rss-base-url db-path rss-self-url
+           rss-out-file python-path duration-path hubzilla] :as settings}]
+  {:pre [(every? (comp not nil?) [out-oggs-path in-oggs-path db-path
+                                  rss-base-url rss-self-url rss-out-file python-path
+                                  duration-path hubzilla])]}
   (log/info "making feed" out-oggs-path rss-base-url rss-self-url " --> " rss-out-file)
-  (->> out-oggs-path
-       (get-files rss-base-url db-path python-path duration-path)
-       (xml-feedify rss-self-url)
-       (spit rss-out-file))
-  (->> out-oggs-path
-       (get-files rss-base-url db-path python-path duration-path)
-       (hubzilla/post-all hubzilla)))
+  (let [files (get-files settings)]
+    (->> files
+         (map #(dissoc % :post-future))
+         (xml-feedify rss-self-url)
+         (spit rss-out-file))
+    ;; wait for all the threads to stop
+    (doseq [f files]
+      (-> f :post-future dissoc))))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -298,19 +305,16 @@
       slurp
       edn/read-string
       make-feed!)
-  
 
 
-  (log/set-level! :trace)
+  (-> "/home/cust/spaz/src/no-hubzilla-defrag.edn"
+      slurp
+      edn/read-string
+      make-feed!)
 
 
-  (let [{:keys [out-oggs-path rss-base-url db-path rss-self-url rss-out-file
-                python-path duration-path hubzilla]}
-        (-> "/home/cust/spaz/src/fake-rss.edn"
-            slurp
-            edn/read-string)]
-    ;;do stufff
-    )
+
+
 
   
   

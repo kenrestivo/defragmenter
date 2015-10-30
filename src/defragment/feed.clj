@@ -89,7 +89,7 @@
 
 
 (defn process-file
-  [link dirpath python-path duration-path f]
+  [rss-base-url dirpath python-path duration-path f]
   (let [[y m d show & _ ] (st/split f #"-")
         full-file (str dirpath "/" f)]
     (log/trace "processing" full-file "->" show)
@@ -98,15 +98,15 @@
             :basename f
             :length (-> full-file jio/file .length)
             :duration (get-duration python-path duration-path full-file)
-            :link (str link f)
+            :link (str rss-base-url f)
             :full-file full-file}
            (read-header full-file))))
 
 
 
 (defn process-dir!
-  [link  db-path python-path duration-path hubzilla dirpath]
-  (log/debug "processing dir" link db-path dirpath)
+  [rss-base-url  db-path python-path duration-path hubzilla dirpath]
+  (log/debug "processing dir" rss-base-url db-path dirpath)
   (let [db (try (-> db-path slurp edn/read-string)
                 (catch Exception e
                   (log/error e)
@@ -116,7 +116,7 @@
                    (log/trace "checking db for file" f)
                    (if-let [found (->> db (filter #(= (:basename %) f)) first)]
                      (do (log/trace "found" found) found)
-                     (let [munged (process-file link dirpath python-path duration-path f)]
+                     (let [munged (process-file rss-base-url dirpath python-path duration-path f)]
                        (assoc munged :post-future (future (try
                                                             (hubzilla/post-to-hubzilla hubzilla munged)
                                                             (catch Exception e
@@ -129,9 +129,9 @@
 
 
 (defn get-files
-  [{:keys [link db-path python-path duration-path hubzilla out-oggs-path]}]
-  (log/info "getting files" link out-oggs-path db-path)
-  (->>   (process-dir! link db-path python-path duration-path  hubzilla out-oggs-path)
+  [{:keys [rss-base-url db-path python-path duration-path hubzilla out-oggs-path]}]
+  (log/info "getting files" rss-base-url out-oggs-path db-path)
+  (->>   (process-dir! rss-base-url db-path python-path duration-path  hubzilla out-oggs-path)
          (sort-by :title)
          reverse))
 

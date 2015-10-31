@@ -4,7 +4,7 @@
  :backup-dir "/mnt/sdcard/to-other/backups"
  :duration-path "/home/cust/spaz/src/defragment/resources/duration.py"
  :python-path "/usr/bin/python"
- :db-path "/mnt/sdcard/tmp/defragment-cache.edn"
+ :db-path "/mnt/sdcard/tmp/defragment-cache.nip"
  :out-commands-file "/mnt/sdcard/tmp/get-me"
  :rss-base-url "http://radio.spaz.org/archives/imports/"
  :rss-self-url "http://radio.spaz.org/archives.rss"

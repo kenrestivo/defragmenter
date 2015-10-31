@@ -4,7 +4,7 @@
  :duration-path "/home/src/defragment/duration.py"
  :cmd-path "/bin/cat"
  :backup-dir "/home/backups"
- :db-path "/home/streams/defragment-cache.edn"
+ :db-path "/home/streams/defragment-cache.nip"
  :out-commands-file "/tmp/get-me"
  :rss-base-url "http://radio.spaz.org/archives/imports/"
  :rss-self-url "http://radio.spaz.org/archives.rss"

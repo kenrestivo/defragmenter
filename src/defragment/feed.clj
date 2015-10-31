@@ -3,6 +3,7 @@
             [clojure.data.xml :as xml]
             [defragment.hubzilla :as hubzilla]
             [utilza.misc :as umisc]
+            [taoensso.nippy :as nippy]
             [me.raynes.conch  :as sh]
             [me.raynes.conch.low-level :as lsh]
             [utilza.repl :as urepl]
@@ -12,6 +13,7 @@
             [defragment.utils :as utils]
             [clojure.string :as st]
             [utilza.misc :as umisc]
+            [utilza.java :as ujava]
             [utilza.file :as file]
             [clojure.java.io :as jio]
             [clj-time.format :as time-fmt]
@@ -107,7 +109,7 @@
 (defn process-dir!
   [rss-base-url  db-path python-path duration-path hubzilla dirpath]
   (log/debug "processing dir" rss-base-url db-path dirpath)
-  (let [db (try (-> db-path slurp edn/read-string)
+  (let [db (try (-> db-path ujava/slurp-bytes nippy/thaw)
                 (catch Exception e
                   (log/error e)
                   []))
@@ -121,9 +123,9 @@
                                                             (hubzilla/post-to-hubzilla hubzilla munged)
                                                             (catch Exception e
                                                               (log/error e)))))))))]
-    (.write *out* "flushing")
-    (.flush *out*)
-    (urepl/massive-spew db-path new-db)
+    (-> (map #(dissoc % :post-future) new-db)
+        nippy/freeze
+        (clojure.java.io/copy (java.io.File. db-path)))
     new-db))
 
 
@@ -299,21 +301,6 @@
                                                           edn/read-string)]
     (get-files rss-base-url db-path out-oggs-path ))
   
-
-
-  (-> "/home/cust/spaz/src/fake-rss.edn"
-      slurp
-      edn/read-string
-      make-feed!)
-
-
-  (-> "/home/cust/spaz/src/no-hubzilla-defrag.edn"
-      slurp
-      edn/read-string
-      make-feed!)
-
-
-
 
 
   

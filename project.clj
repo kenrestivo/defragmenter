@@ -7,7 +7,8 @@
 
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [me.raynes/conch "0.8.0"]
-                 [utilza "0.1.68"]
+                 [utilza "0.1.72"]
+                 [com.taoensso/nippy "2.10.0"] 
                  [org.clojure/data.xml "0.0.8"]
                  [clj-http "2.0.0"]
                  [cheshire "5.5.0"]

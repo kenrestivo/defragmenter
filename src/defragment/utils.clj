@@ -13,6 +13,12 @@
             [taoensso.timbre :as log]
             [clojure.string :as st]))
 
+;;; XXX quick hack 
+;;; TODO:  thread the settings through and use make-retry-fn
+(def max-retries 5)
+(def retry-wait 5000)
+
+
 
 (defn comments->vec
   "Takes array of CommentFields and translates to a proper Clojure vector"
@@ -26,3 +32,14 @@
        .fields
        comments->vec
        (into {})))
+
+
+;;; XXX hack, don't use, use make-retry-fn and thread settings through
+(defn retry
+  [ex try-count http-context]
+  (log/warn ex http-context)
+  (Thread/sleep (* try-count retry-wait))
+  ;; TODO: might want to try smaller chunks too!
+  (if (> try-count max-retries) 
+    false
+    (log/error ex try-count http-context)))

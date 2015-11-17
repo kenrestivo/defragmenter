@@ -1,6 +1,7 @@
 (ns defragment.hubzilla
   (:require [clj-http.client :as client]
             [clojure.edn :as edn]
+            [defragment.utils :as utils]
             [taoensso.timbre :as log]))
 
 
@@ -10,13 +11,17 @@
   (log/info "sending to hubzilla" basename)
   (if (every? (comp not empty?) [date duration artist title link])
     (let [{:keys [body headers]}
-          (client/post url
-                       {:basic-auth [login pw]
-                        :throw-entire-message? true
-                        :as :json
-                        :form-params {:title (format "%s - %s" title artist)
-                                      :status (format "%s - %s\n %s\n[audio]%s[/audio]"
-                                                      title artist duration link)}})]
+          (try
+            (client/post url
+                         {:basic-auth [login pw]
+                          :throw-entire-message? true
+                          :as :json
+                          :retry-handler utils/retry
+                          :form-params {:title (format "%s - %s" title artist)
+                                        :status (format "%s - %s\n %s\n[audio]%s[/audio]"
+                                                        title artist duration link)}})
+            (catch Exception e
+              (log/error e)))]
       ;; TODO: if i don't get JSON back, retry a few times?
       (log/debug "sent to hubzilla" body  " --> " headers))
     (do

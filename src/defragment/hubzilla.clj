@@ -10,19 +10,18 @@
    {:keys [basename date encoder duration artist title link length] :as rec}]
   (log/info "sending to hubzilla" basename)
   (if (every? (comp not empty?) [date duration artist title link])
-    (let [{:keys [body headers]}
-          (try
-            (client/post url
-                         {:basic-auth [login pw]
-                          :throw-entire-message? true
-                          :as :json
-                          :retry-handler utils/retry
-                          :form-params {:title (format "%s - %s" title artist)
-                                        :status (format "%s - %s\n %s\n[audio]%s[/audio]"
-                                                        title artist duration link)}})
-            (catch Exception e
-              (log/error e)))]
-      ;; TODO: if i don't get JSON back, retry a few times?
+    (when-let [{:keys [body headers]}
+               (try
+                 (client/post url
+                              {:basic-auth [login pw]
+                               :throw-entire-message? true
+                               :as :json
+                               :retry-handler utils/retry
+                               :form-params {:title (format "%s - %s" title artist)
+                                             :status (format "%s - %s\n %s\n[audio]%s[/audio]"
+                                                             title artist duration link)}})
+                 (catch Exception e
+                   (log/error e)))]
       (log/debug "sent to hubzilla" body  " --> " headers))
     (do
       (log/error rec)

@@ -367,15 +367,18 @@
   (let [{:keys [version revision]} (ujava/get-project-properties "defragment" "defragment")]
     (format "Version: %s, Revision %s" version revision)))
 
-
-(defn -main [config-path & args]
-  (log/info "Welcome to Defragment " (revision-info))
+(defn run-all
+[config-path]
   (log/info "Loading config file " config-path)
   (let [conf (process-config config-path)]
     (run-all! conf)
     (log/info "concatenation done")
     (feed/make-feed! conf)
-    (log/info "feed done"))
+    (log/info "feed done")))
+
+(defn -main [config-path & args]
+  (log/info "Welcome to Defragment " (revision-info))
+  (run-all config-path)
   (System/exit 0))
 
 
@@ -383,7 +386,7 @@
 
 (comment
 
-  (-main "resources/test-config.edn")
+  (run-all "resources/test-config.edn")
 
   (clojure.tools.trace/trace-vars parse)
 

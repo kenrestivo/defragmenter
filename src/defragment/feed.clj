@@ -36,11 +36,14 @@
 
 ;; is this OK?
 (defn ymd-to-date [ymd]
-  (->> ymd
-       (map #(Integer/parseInt %))
-       (apply time/local-date-time)
-       ctime/to-date-time
-       my-zone))
+  (try
+    (->> ymd
+         (map #(Integer/parseInt %))
+         (apply time/local-date-time) ;; nope, these should be america/la!
+         ctime/to-date-time
+         my-zone)
+    (catch Exception e
+      (log/error e))))
 
 
 (defn s->h:m:s
@@ -134,7 +137,7 @@
   [{:keys [rss-base-url db-path python-path duration-path hubzilla out-oggs-path]}]
   (log/info "getting files" rss-base-url out-oggs-path db-path)
   (->>   (process-dir! rss-base-url db-path python-path duration-path  hubzilla out-oggs-path)
-         (sort-by :title)
+         (sort-by :date)
          reverse))
 
 ;; TODO: move to utlilza

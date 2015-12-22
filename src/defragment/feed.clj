@@ -26,6 +26,13 @@
            [org.joda.DateTime]))
 
 
+(defn date-attempt
+  [{:keys [date]}]
+  (try
+    (java.util.Date. date)
+    (catch Exception e
+      (log/warn e))))
+
 (defn my-zone
   "show a time in a readable format, in my damn time zone
     from utilza"
@@ -137,7 +144,7 @@
   [{:keys [rss-base-url db-path python-path duration-path hubzilla out-oggs-path]}]
   (log/info "getting files" rss-base-url out-oggs-path db-path)
   (->>   (process-dir! rss-base-url db-path python-path duration-path  hubzilla out-oggs-path)
-         (sort-by :date)
+         (sort-by date-attempt)
          reverse))
 
 ;; TODO: move to utlilza
@@ -272,6 +279,8 @@
 
 
 
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (comment
 
@@ -293,19 +302,12 @@
       make-feed!)
   
 
-  (let [{:keys [db-path out-oggs-path rss-base-url]}  (-> "resources/test-config.edn"
-                                                          slurp
-                                                          edn/read-string)]
-    (->> (get-files rss-base-url db-path out-oggs-path )
-         (urepl/massive-spew "/tmp/foo.edn")))
+  (->> "/mnt/sdcard/tmp/livedef.nip" ujava/slurp-bytes nippy/thaw
+       (urepl/massive-spew "/tmp/foo.edn")  )
 
-  (let [{:keys [db-path out-oggs-path rss-base-url]}  (-> "resources/test-config.edn"
-                                                          slurp
-                                                          edn/read-string)]
-    (get-files rss-base-url db-path out-oggs-path ))
-  
-
-
-  
+  (->> "/mnt/sdcard/tmp/livedef.nip" ujava/slurp-bytes nippy/thaw
+       (sort-by date-attempt)
+       reverse
+       (urepl/massive-spew "/tmp/foo.edn"))
   
   )

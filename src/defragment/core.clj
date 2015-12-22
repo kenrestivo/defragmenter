@@ -368,7 +368,7 @@
     (format "Version: %s, Revision %s" version revision)))
 
 (defn run-all
-[config-path]
+  [config-path]
   (log/info "Loading config file " config-path)
   (let [conf (process-config config-path)]
     (run-all! conf)
@@ -386,6 +386,7 @@
 
 (comment
 
+  core
   (run-all "resources/test-config.edn")
 
   (clojure.tools.trace/trace-vars parse)

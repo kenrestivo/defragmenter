@@ -172,6 +172,8 @@
                  (xml/element :comments {}  "http://spaz.org/radio")
                  (xml/element :pubDate {}
                               date)
+                 (xml/element :duration {}
+                              duration) ;; not standard but i want it
                  (xml/element :itunes:image {:href image})
                  (xml/element :image {}
                               [(xml/element :url {} image )

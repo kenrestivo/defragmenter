@@ -172,6 +172,7 @@
                  (xml/element :comments {}  "http://spaz.org/radio")
                  (xml/element :pubDate {}
                               date)
+                 (xml/element :itunes:image {:href image})
                  (xml/element :image {}
                               [(xml/element :url {} image )
                                (xml/element :title  {} full-title)

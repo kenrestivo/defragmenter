@@ -133,7 +133,8 @@
                      (do (log/trace "found" found) found)
                      (let [munged (process-file rss-base-url image-base-url dirpath python-path duration-path f)]
                        (assoc munged :post-future (future (try
-                                                            (hubzilla/post-to-hubzilla hubzilla munged)
+                                                            ;; blow this off, it doesn't work anyway
+                                                            #_(hubzilla/post-to-hubzilla hubzilla munged)
                                                             (catch Exception e
                                                               (log/error e)))))))))]
     (-> (map #(dissoc % :post-future) new-db)

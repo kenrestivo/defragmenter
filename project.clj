@@ -22,5 +22,7 @@
   ;; needed for this wacky jorbiscomment thing
   :repositories [["kens" "http://restivo.org/mvn"]]
   :profiles {:uberjar {:aot :all
+                       :dependencies [[org.restivo/clojure "1.7.0-fastload"
+                                       :exclusions [org.clojure/clojure]]]
                        :uberjar-name "defragment.jar"}
              :dev {:dependencies [[org.timmc/handy "1.7.0" :exclusions [[org.clojure/clojure]]]]}})

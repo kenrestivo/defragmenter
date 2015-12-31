@@ -6,6 +6,7 @@
  :python-path "/usr/bin/python"
  :db-path "/mnt/sdcard/tmp/defragment-cache.nip"
  :out-commands-file "/mnt/sdcard/tmp/get-me"
+ :image-base-url "http://radio.spaz.org/archives/images/"
  :rss-base-url "http://radio.spaz.org/archives/imports/"
  :rss-self-url "http://radio.spaz.org/archives.rss"
  :rss-out-file "/tmp/foo.xml"

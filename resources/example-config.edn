@@ -7,6 +7,7 @@
  :db-path "/home/streams/defragment-cache.nip"
  :out-commands-file "/tmp/get-me"
  :rss-base-url "http://radio.spaz.org/archives/imports/"
+ :image-base-url "http://radio.spaz.org/archives/images/"
  :rss-self-url "http://radio.spaz.org/archives.rss"
  :rss-out-file "/home/streams/archives.rss"
  :hubzilla {:url "somwehere"

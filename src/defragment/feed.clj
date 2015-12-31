@@ -9,6 +9,7 @@
             [utilza.repl :as urepl]
             [clojure.edn :as edn]
             [clojure.string :as string]
+            [clj-http.util :as hutil]
             [clj-time.core :as time]
             [defragment.utils :as utils]
             [clojure.string :as st]
@@ -101,23 +102,25 @@
 
 
 (defn process-file
-  [rss-base-url dirpath python-path duration-path f]
+  [rss-base-url image-base-url dirpath python-path duration-path f]
+  {:pre [(every? (comp not nil?) [rss-base-url image-base-url dirpath python-path duration-path f])]}
   (let [[y m d show & _ ] (st/split f #"-")
         full-file (str dirpath "/" f)]
     (log/trace "processing" full-file "->" show)
     (merge {:date (ymd-to-date [y m d])
             :show (if (-> show empty?) "" (unogg show))
             :basename f
+            :image (str image-base-url (hutil/url-encode f)  ".png") 
             :length (-> full-file jio/file .length)
             :duration (get-duration python-path duration-path full-file)
-            :link (str rss-base-url f)
+            :link (str rss-base-url (hutil/url-encode f))
             :full-file full-file}
            (read-header full-file))))
 
 
 
 (defn process-dir!
-  [rss-base-url  db-path python-path duration-path hubzilla dirpath]
+  [rss-base-url  image-base-url db-path python-path duration-path hubzilla dirpath]
   (log/debug "processing dir" rss-base-url db-path dirpath)
   (let [db (try (-> db-path ujava/slurp-bytes nippy/thaw)
                 (catch Exception e
@@ -128,7 +131,7 @@
                    (log/trace "checking db for file" f)
                    (if-let [found (->> db (filter #(= (:basename %) f)) first)]
                      (do (log/trace "found" found) found)
-                     (let [munged (process-file rss-base-url dirpath python-path duration-path f)]
+                     (let [munged (process-file rss-base-url image-base-url dirpath python-path duration-path f)]
                        (assoc munged :post-future (future (try
                                                             (hubzilla/post-to-hubzilla hubzilla munged)
                                                             (catch Exception e
@@ -141,9 +144,9 @@
 
 
 (defn get-files
-  [{:keys [rss-base-url db-path python-path duration-path hubzilla out-oggs-path]}]
+  [{:keys [rss-base-url image-base-url db-path python-path duration-path hubzilla out-oggs-path]}]
   (log/info "getting files" rss-base-url out-oggs-path db-path)
-  (->>   (process-dir! rss-base-url db-path python-path duration-path  hubzilla out-oggs-path)
+  (->>   (process-dir! rss-base-url image-base-url db-path python-path duration-path  hubzilla out-oggs-path)
          (sort-by date-attempt)
          reverse))
 
@@ -160,7 +163,7 @@
 (defn format-item
   "logentry comes in from the view as :key date, :id guid, :value message.
    Change these to XML item elements for RSS feed."
-  [{:keys [file show date link date duration title artist length]}]
+  [{:keys [file show date link date duration title artist length image]}]
   (let [full-title (umisc/inter-str " - " [artist title])]
     (xml/element :item {}
                  (xml/element :title {}
@@ -169,6 +172,10 @@
                  (xml/element :comments {}  "http://spaz.org/radio")
                  (xml/element :pubDate {}
                               date)
+                 (xml/element :image {}
+                              [(xml/element :url {} image )
+                               (xml/element :title  {} full-title)
+                               (xml/element :link  {} "http://spaz.org/radio")])
                  (xml/element :dc:creator {} (umisc/escape-html (or artist "Unknown")))
                  (xml/element :category {} (xml/cdata "[music]"))
                  (xml/element :guid {:isPermaLink "false"}
@@ -176,11 +183,11 @@
                  (xml/element :description {}
                               (xml/cdata full-title))
                  (xml/element :content:encoded {}
-                              (xml/cdata (format "<p>%s</p><audio controls src='%s'>Player</audio>" (umisc/escape-html full-title) link)))
+                              (xml/cdata (format "<p>%s</p><audio controls src='%s'>Player</audio>" (umisc/escape-html full-title)  link)))
                  (xml/element :wfw:commentRss {} "http://spaz.org/radio")
                  (xml/element :slash:comments {} 0)
                  (xml/element :enclosure  {:type "audio/ogg"
-                                           :url link
+                                           :url  link
                                            :length length})
                  (xml/element :itunes:duration {}
                               duration )
@@ -262,10 +269,11 @@
              formatted-items)))))
 
 (defn make-feed!
-  [{:keys [out-oggs-path in-oggs-path rss-base-url db-path rss-self-url
+  [{:keys [out-oggs-path in-oggs-path rss-base-url image-base-url db-path rss-self-url
            rss-out-file python-path duration-path hubzilla] :as settings}]
   {:pre [(every? (comp not nil?) [out-oggs-path in-oggs-path db-path
                                   rss-base-url rss-self-url rss-out-file python-path
+                                  image-base-url
                                   duration-path hubzilla])]}
   (log/info "making feed" out-oggs-path rss-base-url rss-self-url " --> " rss-out-file)
   (let [files (get-files settings)]

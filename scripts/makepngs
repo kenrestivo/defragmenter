@@ -1,0 +1,11 @@
+#!/bin/bash
+
+T="/home/www/archives"
+
+[ "$1" ] && T=$1
+
+for i in `ls $T/imports/`; do  
+    if [ ! -e "$T/images/$i.png" ]; then 
+	/usr/bin/ogg123 -d wav -f - $T/imports/${i} | /usr/local/bin/wav2png --foreground-color=ff00ffaa --background-color=000000ff -d --db-min -40 --db-max 3 --width 420 --height 65 -o $T/images/${i}.png /dev/stdin; 
+    fi
+done

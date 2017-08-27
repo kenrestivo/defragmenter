@@ -1,7 +1,6 @@
 (ns defragment.feed
   (:require [taoensso.timbre :as log]
             [clojure.data.xml :as xml]
-            [defragment.hubzilla :as hubzilla]
             [utilza.misc :as umisc]
             [taoensso.nippy :as nippy]
             [me.raynes.conch  :as sh]
@@ -117,30 +116,31 @@
             :full-file full-file}
            (read-header full-file))))
 
+(defn add-new-files
+  [db {:keys [rss-base-url image-base-url dirpath python-path duration-path]}]
+  (doseq [f (file/file-names dirpath  #".*?\.ogg")]
+    (log/trace "checking db for file" f)
+    (if-let [found (->> @db (filter #(= (:basename %) f)) first)]
+      (log/trace "found" found)
+      (swap! db conj (process-file rss-base-url image-base-url dirpath python-path duration-path f)))))
 
 
 (defn process-dir!
   [rss-base-url  image-base-url db-path python-path duration-path hubzilla dirpath]
   (log/debug "processing dir" rss-base-url db-path dirpath)
-  (let [db (try (-> db-path ujava/slurp-bytes nippy/thaw)
+  (let [db (try (-> db-path ujava/slurp-bytes nippy/thaw atom)
                 (catch Exception e
                   (log/error e)
-                  []))
-        new-db (for [f (file/file-names dirpath  #".*?\.ogg")]
-                 (do
-                   (log/trace "checking db for file" f)
-                   (if-let [found (->> db (filter #(= (:basename %) f)) first)]
-                     (do (log/trace "found" found) found)
-                     (let [munged (process-file rss-base-url image-base-url dirpath python-path duration-path f)]
-                       (assoc munged :post-future (future (try
-                                                            ;; blow this off, it doesn't work anyway
-                                                            #_(hubzilla/post-to-hubzilla hubzilla munged)
-                                                            (catch Exception e
-                                                              (log/error e)))))))))]
-    (-> (map #(dissoc % :post-future) new-db)
+                  []))]
+    (add-new-files db {:rss-base-url rss-base-url 
+                       :image-base-url image-base-url 
+                       :dirpath dirpath 
+                       :python-path python-path 
+                       :duration-path duration-path})
+    (-> @db
         nippy/freeze
         (clojure.java.io/copy (java.io.File. db-path)))
-    new-db))
+    @db))
 
 
 

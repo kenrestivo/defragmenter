@@ -8,3 +8,24 @@ TODO for defragment
 * TODO move the log config in timbre to after the config file is loaded
 * TODO safely remove all old out-cmd-file's after concatenate! is done
 * TODO sanity check config at startup, i.e. ike the directories exist
+* TODO bug found
+  #+BEGIN_SRC text
+Apr 27 16:58:55 radio kernel: [1296059.266353] BUG: Bad page map in process java  pte:00000320 pmd:4366c067
+Apr 27 16:58:55 radio kernel: [1296059.266373] addr:00007fa9acc9f000 vm_flags:08000070 anon_vma:          (null) mapping:          (null) index:7fa9acc9f                                                                                     Apr 27 16:58:55 radio kernel: [1296059.266385] CPU: 0 PID: 31069 Comm: java Tainted: G    B        3.13.0-24-generic #47-Ubuntu
+Apr 27 16:58:55 radio kernel: [1296059.266388]  ffff8800c141e6c0 ffff8800eaf97c58 ffffffff81715ac4 00007fa9acc9f000    Apr 27 16:58:55 radio kernel: [1296059.266395]  ffff8800eaf97ca0 ffffffff81174183 0000000000000320 00000007fa9acc9f
+Apr 27 16:58:55 radio kernel: [1296059.266399]  ffff88004366c4f8 0000000000000320 00007fa9acc9f000 00007fa9acca0000
+Apr 27 16:58:55 radio kernel: [1296059.266403] Call Trace:                                                             Apr 27 16:58:55 radio kernel: [1296059.266414]  [<ffffffff81715ac4>] dump_stack+0x45/0x56
+Apr 27 16:58:55 radio kernel: [1296059.266420]  [<ffffffff81174183>] print_bad_pte+0x1a3/0x250
+Apr 27 16:58:55 radio kernel: [1296059.266424]  [<ffffffff81175439>] vm_normal_page+0x69/0x80                          Apr 27 16:58:55 radio kernel: [1296059.266428]  [<ffffffff8117580b>] unmap_page_range+0x3bb/0x7f0
+Apr 27 16:58:55 radio kernel: [1296059.266432]  [<ffffffff81175cc1>] unmap_single_vma+0x81/0xf0
+Apr 27 16:58:55 radio kernel: [1296059.266436]  [<ffffffff81176d39>] unmap_vmas+0x49/0x90                              Apr 27 16:58:55 radio kernel: [1296059.266441]  [<ffffffff8117feec>] exit_mmap+0x9c/0x170
+Apr 27 16:58:55 radio kernel: [1296059.266447]  [<ffffffff8106482c>] mmput+0x5c/0x120
+Apr 27 16:58:55 radio kernel: [1296059.266451]  [<ffffffff81069bbc>] do_exit+0x26c/0xa50                               Apr 27 16:58:55 radio kernel: [1296059.266458]  [<ffffffff8109a780>] ? wake_up_state+0x10/0x20
+Apr 27 16:58:55 radio kernel: [1296059.266463]  [<ffffffff81077b4e>] ? signal_wake_up_state+0x1e/0x30
+Apr 27 16:58:55 radio kernel: [1296059.266468]  [<ffffffff81078eb2>] ? zap_other_threads+0x82/0xa0                     Apr 27 16:58:55 radio kernel: [1296059.266471]  [<ffffffff8106a41f>] do_group_exit+0x3f/0xa0
+Apr 27 16:58:55 radio kernel: [1296059.266475]  [<ffffffff8106a494>] SyS_exit_group+0x14/0x20
+Apr 27 16:58:55 radio kernel: [1296059.266480]  [<ffffffff817266bf>] tracesys+0xe1/0xe6
+#+END_SRC
+** TODO maybe http://www.mapdb.org/blog/mmap_files_alloc_and_jvm_crash/ 
+** seems to be an OOM related problem
+   https://www.centos.org/forums/viewtopic.php?t=45383

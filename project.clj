@@ -1,6 +1,6 @@
 (defproject defragment "0.1.11"
   :description "Ogg file defragmenter"
-  :url "https://github.com/kenrestivo/defragment"
+  :url "https://gitlab.com/kenrestivo/defragment"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :plugins [[lein-bin "0.3.4"]]

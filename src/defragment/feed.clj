@@ -73,6 +73,8 @@
       first))
 
 
+;; XXX it's ridiculous to shell out to python to read a bit of header off of an ogg.
+;; TODO: seriosuly, fix this.
 (defn get-duration
   [python-path duration-path full-path]
   (log/debug "getting duration for" full-path)

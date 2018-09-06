@@ -130,10 +130,11 @@
 (defn process-dir!
   [rss-base-url  image-base-url db-path python-path duration-path hubzilla dirpath]
   (log/debug "processing dir" rss-base-url db-path dirpath)
-  (let [db (try (-> db-path ujava/slurp-bytes nippy/thaw atom)
-                (catch Exception e
-                  (log/error e)
-                  []))]
+  (let [db (atom (try (-> db-path ujava/slurp-bytes nippy/thaw)
+                      (catch Exception e
+                        (log/warn e)
+                        ;; no file, just use blank and start over
+                        [])))]
     (add-new-files db {:rss-base-url rss-base-url 
                        :image-base-url image-base-url 
                        :dirpath dirpath 

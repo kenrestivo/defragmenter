@@ -1,4 +1,4 @@
-(defproject defragment "0.1.11"
+(defproject defragment "0.1.12"
   :description "Ogg file defragmenter"
   :url "https://gitlab.com/kenrestivo/defragment"
   :license {:name "Eclipse Public License"

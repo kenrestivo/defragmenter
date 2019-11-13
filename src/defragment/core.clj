@@ -145,6 +145,7 @@
   "Takes file path, show name, and date.
    Returns a string with the outgoing show filename and path, with ogg extension"
   [path name date]
+  ;; TODO: XXX if there already is an arhive there! don't overwrite it, use a new name!
   (format "%s/%s-%s.ogg"  path date name))
 
 

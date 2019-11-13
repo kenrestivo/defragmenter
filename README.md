@@ -47,11 +47,11 @@ TODO: document the config file options
 
 Actually, none at the moment, I'm sure some will crop up at some point.
 
-
+That said, this is some truly awful code. It really needs to be redone or at least refactored.
 
 ## License
 
-Copyright © 2014 ken restivo <ken@restivo.org>
+Copyright © 2014-2019 ken restivo <ken@restivo.org>
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.

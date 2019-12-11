@@ -156,7 +156,7 @@
   Returns the string shell command to concatenate all the filenames,
   to the output dir, named properly with name and date."
   [cmd-path path {:keys [name date filenames]}]
-  (let [cmd (format "nice -n 15 ogg123 --audio-buffer 0 -q -d raw -o byteorder:little -f - %s | nice -n 15 oggenc -Q -r - > %s"
+  (let [cmd (format "nice -n 15 ogg123 --audio-buffer 0 -q -d raw -o byteorder:little -f - %s | nice -n 15 oggenc -Q -r - >> %s"
                     (umisc/inter-str " " filenames)
                     (format-show-save path name date))]
     (format "echo \"%s\"\n%s\n" cmd cmd)))

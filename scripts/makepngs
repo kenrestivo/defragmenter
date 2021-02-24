@@ -6,6 +6,19 @@ T="/home/www/archives"
 
 for i in `ls $T/imports/`; do  
     if [ ! -e "$T/images/$i.png" ]; then 
-	/usr/bin/ogg123 -d wav -f - $T/imports/${i} | /usr/local/bin/wav2png --foreground-color=ff00ffaa --background-color=000000ff -d --db-min -40 --db-max 3 --width 420 --height 65 -o $T/images/${i}.png /dev/stdin; 
+	/usr/bin/ogg123 \
+	    -d wav \
+	    -f - \
+	    $T/imports/${i} \
+	    | /usr/local/bin/wav2png \
+		  --background-color=000000ff \
+		  --db-max 3 \
+		  --db-min -40 \
+		  --foreground-color=ff00ffaa \
+		  --height 65 \
+		  --width 420 \
+		  -d \
+		  -o $T/images/${i}.png \
+		  /dev/stdin; 
     fi
 done
